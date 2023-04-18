@@ -53,7 +53,7 @@
         };
         devShell = pkgs.mkShell {
           inputsFrom = builtins.attrValues self.checks;
-          nativeBuildInputs = [rustToolchain fenixPkgs.rust-analyzer buildDeps];
+          nativeBuildInputs = buildDeps;
         };
       }
     );
