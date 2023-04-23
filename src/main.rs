@@ -1,9 +1,9 @@
 use std::io::{self, Write};
 
 use iced::keyboard::{self, KeyCode};
-use iced::widget::{container, text, text_input, Column};
+use iced::widget::{container, row, text, text_input, Column};
 use iced::{
-    executor, subscription, window, Application, Color, Command, Element, Event, Settings,
+    executor, subscription, theme, window, Application, Command, Element, Event, Length, Settings,
     Subscription, Theme,
 };
 
@@ -13,7 +13,7 @@ fn main() -> iced::Result {
         .lines()
         .map(|x| x.unwrap_or_default())
         .collect::<Vec<String>>();
-    let prompt = String::from("Choose you character");
+    let prompt = String::from("");
     let initial_query = String::from("");
 
     // Display app
@@ -24,8 +24,9 @@ fn main() -> iced::Result {
             initial_query,
         },
         window: window::Settings {
-            // decorations: false,
-            // always_on_top: true,
+            decorations: false,
+            always_on_top: true,
+            max_size: Some((400, 1000)),
             ..window::Settings::default()
         },
         ..Settings::default()
@@ -51,6 +52,7 @@ struct IcedMenu {
     visible_indices: Vec<usize>,
     selected_indices: Vec<usize>,
     cursor_position: usize,
+    query_input_id: text_input::Id,
 }
 
 #[derive(Debug, Clone)]
@@ -66,6 +68,7 @@ enum Message {
     CursorMoved(CursorMoveDirection),
     SelectionToggled,
     Submitted,
+    Quit,
 }
 
 impl IcedMenu {
@@ -130,6 +133,7 @@ impl Application for IcedMenu {
                 value: x.to_string(),
             })
             .collect();
+        let query_input_id = text_input::Id::new("query_input");
         let mut menu = Self {
             prompt: flags.prompt,
             items,
@@ -137,35 +141,46 @@ impl Application for IcedMenu {
             visible_indices: Vec::new(),
             selected_indices: Vec::new(),
             cursor_position: 0,
+            query_input_id: query_input_id.clone(),
         };
         menu.update_visible_items();
-        (menu, Command::none())
+        (
+            menu,
+            Command::batch(vec![
+                text_input::focus(query_input_id),
+                window::gain_focus(),
+            ]),
+        )
     }
 
     fn title(&self) -> String {
-        return String::from("");
+        return self.prompt.clone();
     }
 
     fn view(&self) -> Element<Message> {
-        let query_box = text_input(&self.prompt, &self.query)
+        let query_input = text_input(&self.prompt, &self.query)
             .on_input(Message::QueryChanged)
             .on_submit(Message::Submitted)
             .padding(10)
-            .size(30);
-        let mut content = vec![query_box.into()];
+            .id(self.query_input_id.clone());
+        let mut content = vec![query_input.into()];
         self.visible_items().enumerate().for_each(|(i, x)| {
-            let is_selected = i == self.cursor_position;
-            let t = container(text(&x.key).style(if is_selected {
-                Color::WHITE
-            } else {
-                Color::BLACK
-            }));
+            let is_under_cursor = i == self.cursor_position;
+            let t = container(row![text(&x.key)])
+                .width(Length::Fill)
+                .padding(16)
+                .style(if is_under_cursor {
+                    theme::Container::Box
+                } else {
+                    theme::Container::Transparent
+                });
             content.push(t.into());
         });
-        return Column::with_children(content)
+        Column::with_children(content)
             .padding(20)
-            .spacing(20)
-            .into();
+            .spacing(6)
+            .height(Length::Shrink)
+            .into()
     }
 
     fn update(&mut self, message: Message) -> Command<Self::Message> {
@@ -177,8 +192,12 @@ impl Application for IcedMenu {
                 if self.visible_indices.len() != num_items_prev {
                     self.move_cursor(CursorMoveDirection::Reset)
                 }
+                window::resize::<Message>(400, (self.visible_indices.len() as u32 + 2) * 50)
             }
-            Message::CursorMoved(direction) => self.move_cursor(direction),
+            Message::CursorMoved(direction) => {
+                self.move_cursor(direction);
+                Command::none()
+            }
             Message::SelectionToggled => {
                 let selected_index = self.visible_indices[self.cursor_position];
                 let existing_index = self
@@ -191,6 +210,7 @@ impl Application for IcedMenu {
                     }
                     None => self.selected_indices.push(selected_index),
                 }
+                Command::none()
             }
             Message::Submitted => {
                 let selected_items: Vec<&MenuItem> = if self.selected_indices.len() > 0 {
@@ -211,10 +231,10 @@ impl Application for IcedMenu {
                         .as_bytes(),
                     )
                     .unwrap();
-                return window::close();
+                window::close()
             }
+            Message::Quit => window::close(),
         }
-        return Command::none();
     }
 
     fn subscription(&self) -> Subscription<Message> {
@@ -233,6 +253,9 @@ impl Application for IcedMenu {
                     Some(Message::CursorMoved(CursorMoveDirection::Down))
                 }
                 (KeyCode::Tab, _) => Some(Message::SelectionToggled),
+                (KeyCode::Escape, _) | (KeyCode::D, keyboard::Modifiers::CTRL) => {
+                    Some(Message::Quit)
+                }
                 _ => None,
             },
             _ => None,
