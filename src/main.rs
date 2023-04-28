@@ -14,21 +14,27 @@ fn main() -> iced::Result {
         .map(|x| x.unwrap_or_default())
         .collect::<Vec<String>>();
     let prompt = String::from("");
-    let initial_query = String::from("");
+    let query = String::from("");
+    let menu_theme = IcedMenuTheme::default();
+    let window = window::Settings {
+        decorations: false,
+        always_on_top: true,
+        max_size: Some((
+            menu_theme.window_width,
+            menu_theme.window_height(items.len() as u16),
+        )),
+        ..window::Settings::default()
+    };
 
     // Display app
     return IcedMenu::run(Settings {
         flags: Flags {
             prompt,
             items,
-            initial_query,
+            query,
+            menu_theme,
         },
-        window: window::Settings {
-            decorations: false,
-            always_on_top: true,
-            max_size: Some((400, 1000)),
-            ..window::Settings::default()
-        },
+        window,
         ..Settings::default()
     });
 }
@@ -37,7 +43,8 @@ fn main() -> iced::Result {
 struct Flags {
     prompt: String,
     items: Vec<String>,
-    initial_query: String,
+    query: String,
+    menu_theme: IcedMenuTheme,
 }
 
 struct MenuItem {
@@ -47,6 +54,7 @@ struct MenuItem {
 
 struct IcedMenu {
     prompt: String,
+    menu_theme: IcedMenuTheme,
     items: Vec<MenuItem>,
     query: String,
     visible_indices: Vec<usize>,
@@ -69,6 +77,43 @@ enum Message {
     SelectionToggled,
     Submitted,
     Quit,
+}
+
+struct IcedMenuTheme {
+    window_width: u32,
+    padding: u16,
+    query_font_size: u16,
+    query_padding: u16,
+    item_font_size: u16,
+    item_padding: u16,
+    item_spacing: u16,
+}
+
+impl IcedMenuTheme {
+    fn window_height(&self, n_items: u16) -> u32 {
+        (self.query_font_size
+            + 2 * self.query_padding
+            + n_items * (self.item_font_size + 2 * self.item_padding)
+            + n_items * self.item_spacing
+            + 2 * self.padding)
+            .into()
+    }
+}
+
+impl Default for IcedMenuTheme {
+    fn default() -> Self {
+        let font_size = 20;
+        let item_padding = 20;
+        Self {
+            window_width: 400,
+            padding: 20,
+            query_font_size: font_size,
+            query_padding: item_padding,
+            item_font_size: font_size,
+            item_padding,
+            item_spacing: 10,
+        }
+    }
 }
 
 impl IcedMenu {
@@ -135,9 +180,10 @@ impl Application for IcedMenu {
             .collect();
         let query_input_id = text_input::Id::new("query_input");
         let mut menu = Self {
+            menu_theme: flags.menu_theme,
             prompt: flags.prompt,
+            query: flags.query,
             items,
-            query: flags.initial_query,
             visible_indices: Vec::new(),
             selected_indices: Vec::new(),
             cursor_position: 0,
@@ -159,16 +205,17 @@ impl Application for IcedMenu {
 
     fn view(&self) -> Element<Message> {
         let query_input = text_input(&self.prompt, &self.query)
+            .size(self.menu_theme.query_font_size)
             .on_input(Message::QueryChanged)
             .on_submit(Message::Submitted)
-            .padding(10)
+            .padding(self.menu_theme.query_padding)
             .id(self.query_input_id.clone());
         let mut content = vec![query_input.into()];
         self.visible_items().enumerate().for_each(|(i, x)| {
             let is_under_cursor = i == self.cursor_position;
-            let t = container(row![text(&x.key)])
+            let t = container(row![text(&x.key).size(self.menu_theme.item_font_size)])
                 .width(Length::Fill)
-                .padding(16)
+                .padding(self.menu_theme.item_padding)
                 .style(if is_under_cursor {
                     theme::Container::Box
                 } else {
@@ -177,9 +224,8 @@ impl Application for IcedMenu {
             content.push(t.into());
         });
         Column::with_children(content)
-            .padding(20)
-            .spacing(6)
-            .height(Length::Shrink)
+            .padding(self.menu_theme.padding)
+            .spacing(self.menu_theme.item_spacing)
             .into()
     }
 
@@ -189,10 +235,16 @@ impl Application for IcedMenu {
                 let num_items_prev = self.visible_indices.len();
                 self.query = new_query;
                 self.update_visible_items();
-                if self.visible_indices.len() != num_items_prev {
-                    self.move_cursor(CursorMoveDirection::Reset)
+                let num_items = self.visible_indices.len();
+                if num_items != num_items_prev {
+                    self.move_cursor(CursorMoveDirection::Reset);
+                    window::resize::<Message>(
+                        self.menu_theme.window_width,
+                        self.menu_theme.window_height(num_items as u16),
+                    )
+                } else {
+                    Command::none()
                 }
-                window::resize::<Message>(400, (self.visible_indices.len() as u32 + 2) * 50)
             }
             Message::CursorMoved(direction) => {
                 self.move_cursor(direction);
