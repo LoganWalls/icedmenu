@@ -1,11 +1,13 @@
-use std::io::{self, Write};
-
+use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
 use iced::widget::{container, row, text, text_input, Column};
 use iced::{
     executor, subscription, theme, window, Application, Command, Element, Event, Length, Settings,
     Subscription, Theme,
 };
+use std::cmp::{Ord, Ordering};
+use std::io::{self, Write};
 
 fn main() -> iced::Result {
     // Get input from stdin
@@ -52,15 +54,25 @@ struct MenuItem {
     value: String,
 }
 
-struct IcedMenu {
-    prompt: String,
-    menu_theme: IcedMenuTheme,
-    items: Vec<MenuItem>,
-    query: String,
-    visible_indices: Vec<usize>,
-    selected_indices: Vec<usize>,
-    cursor_position: usize,
-    query_input_id: text_input::Id,
+#[derive(Eq, PartialEq, PartialOrd)]
+struct MatchedItem {
+    item_index: usize,
+    score: Option<u32>,
+    match_indices: Option<Vec<usize>>,
+}
+
+impl Ord for MatchedItem {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self.score, other.score) {
+            // Sort by score
+            (Some(a), Some(b)) => a.cmp(&b),
+            // Items with a score should be above those without
+            (Some(_), _) => Ordering::Greater,
+            (None, Some(_)) => Ordering::Less,
+            // Fallback to the order of the input
+            (_, _) => self.item_index.cmp(&other.item_index).reverse(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -116,25 +128,52 @@ impl Default for IcedMenuTheme {
     }
 }
 
+struct IcedMenu {
+    prompt: String,
+    menu_theme: IcedMenuTheme,
+    items: Vec<MenuItem>,
+    query: String,
+    matches: Vec<MatchedItem>,
+    selected_indices: Vec<usize>,
+    cursor_position: usize,
+    query_input_id: text_input::Id,
+    fuzzy_matcher: SkimMatcherV2,
+}
+
 impl IcedMenu {
     fn update_visible_items(&mut self) {
-        self.visible_indices = self
+        self.matches = self
             .items
             .iter()
             .enumerate()
-            .filter(|(i, item)| {
-                item.key
-                    .to_lowercase()
-                    .starts_with(&self.query.to_lowercase())
-                    || self.selected_indices.contains(i)
-            })
-            .take(50)
-            .map(|(i, _)| i)
-            .collect()
+            .filter_map(|(i, item)| self.match_item(item, i))
+            .collect::<Vec<_>>();
+        self.matches.sort_by(|a, b| b.cmp(a));
+    }
+
+    fn match_item(&self, item: &MenuItem, index: usize) -> Option<MatchedItem> {
+        match self.fuzzy_matcher.fuzzy_indices(&item.key, &self.query) {
+            Some((score, match_indices)) => Some(MatchedItem {
+                item_index: index,
+                score: Some(score as u32),
+                match_indices: Some(match_indices),
+            }),
+            None => {
+                if self.selected_indices.contains(&index) {
+                    Some(MatchedItem {
+                        item_index: index,
+                        score: None,
+                        match_indices: None,
+                    })
+                } else {
+                    None
+                }
+            }
+        }
     }
 
     fn move_cursor(&mut self, direction: CursorMoveDirection) {
-        let num_items = self.visible_indices.len();
+        let num_items = self.matches.len();
         self.cursor_position = match direction {
             CursorMoveDirection::Up => {
                 if self.cursor_position == 0 {
@@ -154,12 +193,8 @@ impl IcedMenu {
         }
     }
 
-    fn visible_item(&self, visible_index: usize) -> &MenuItem {
-        &self.items[self.visible_indices[visible_index]]
-    }
-
-    fn visible_items(&self) -> impl Iterator<Item = &MenuItem> {
-        self.visible_indices.iter().map(|i| &self.items[*i])
+    fn matched_item(&self, matched: &MatchedItem) -> &MenuItem {
+        &self.items[matched.item_index]
     }
 }
 
@@ -184,10 +219,11 @@ impl Application for IcedMenu {
             prompt: flags.prompt,
             query: flags.query,
             items,
-            visible_indices: Vec::new(),
+            matches: Vec::new(),
             selected_indices: Vec::new(),
             cursor_position: 0,
             query_input_id: query_input_id.clone(),
+            fuzzy_matcher: SkimMatcherV2::default(),
         };
         menu.update_visible_items();
         (
@@ -211,9 +247,10 @@ impl Application for IcedMenu {
             .padding(self.menu_theme.query_padding)
             .id(self.query_input_id.clone());
         let mut content = vec![query_input.into()];
-        self.visible_items().enumerate().for_each(|(i, x)| {
+        self.matches.iter().enumerate().for_each(|(i, m)| {
+            let item = self.matched_item(m);
             let is_under_cursor = i == self.cursor_position;
-            let t = container(row![text(&x.key).size(self.menu_theme.item_font_size)])
+            let t = container(row![text(&item.key).size(self.menu_theme.item_font_size)])
                 .width(Length::Fill)
                 .padding(self.menu_theme.item_padding)
                 .style(if is_under_cursor {
@@ -232,10 +269,10 @@ impl Application for IcedMenu {
     fn update(&mut self, message: Message) -> Command<Self::Message> {
         match message {
             Message::QueryChanged(new_query) => {
-                let num_items_prev = self.visible_indices.len();
+                let num_items_prev = self.matches.len();
                 self.query = new_query;
                 self.update_visible_items();
-                let num_items = self.visible_indices.len();
+                let num_items = self.matches.len();
                 if num_items != num_items_prev {
                     self.move_cursor(CursorMoveDirection::Reset);
                     window::resize::<Message>(
@@ -251,7 +288,7 @@ impl Application for IcedMenu {
                 Command::none()
             }
             Message::SelectionToggled => {
-                let selected_index = self.visible_indices[self.cursor_position];
+                let selected_index = self.matches[self.cursor_position].item_index;
                 let existing_index = self
                     .selected_indices
                     .iter()
@@ -271,7 +308,7 @@ impl Application for IcedMenu {
                         .map(|i| &self.items[*i])
                         .collect()
                 } else {
-                    vec![self.visible_item(self.cursor_position)]
+                    vec![self.matched_item(&self.matches[self.cursor_position])]
                 };
                 io::stdout()
                     .write_all(
