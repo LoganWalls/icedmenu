@@ -49,7 +49,7 @@ struct Flags {
     menu_theme: IcedMenuTheme,
 }
 
-struct MenuItem {
+struct Item {
     key: String,
     value: String,
 }
@@ -69,7 +69,7 @@ impl Ord for MatchedItem {
             // Items with a score should be above those without
             (Some(_), _) => Ordering::Greater,
             (None, Some(_)) => Ordering::Less,
-            // Fallback to the order of the input
+            // Fallback to the order of the items in the input
             (_, _) => self.item_index.cmp(&other.item_index).reverse(),
         }
     }
@@ -131,7 +131,7 @@ impl Default for IcedMenuTheme {
 struct IcedMenu {
     prompt: String,
     menu_theme: IcedMenuTheme,
-    items: Vec<MenuItem>,
+    items: Vec<Item>,
     query: String,
     matches: Vec<MatchedItem>,
     selected_indices: Vec<usize>,
@@ -151,7 +151,7 @@ impl IcedMenu {
         self.matches.sort_by(|a, b| b.cmp(a));
     }
 
-    fn match_item(&self, item: &MenuItem, index: usize) -> Option<MatchedItem> {
+    fn match_item(&self, item: &Item, index: usize) -> Option<MatchedItem> {
         match self.fuzzy_matcher.fuzzy_indices(&item.key, &self.query) {
             Some((score, match_indices)) => Some(MatchedItem {
                 item_index: index,
@@ -193,7 +193,7 @@ impl IcedMenu {
         }
     }
 
-    fn matched_item(&self, matched: &MatchedItem) -> &MenuItem {
+    fn matched_item(&self, matched: &MatchedItem) -> &Item {
         &self.items[matched.item_index]
     }
 }
@@ -208,7 +208,7 @@ impl Application for IcedMenu {
         let items = flags
             .items
             .iter()
-            .map(|x| MenuItem {
+            .map(|x| Item {
                 key: x.to_string(),
                 value: x.to_string(),
             })
@@ -302,7 +302,7 @@ impl Application for IcedMenu {
                 Command::none()
             }
             Message::Submitted => {
-                let selected_items: Vec<&MenuItem> = if self.selected_indices.len() > 0 {
+                let selected_items: Vec<&Item> = if self.selected_indices.len() > 0 {
                     self.selected_indices
                         .iter()
                         .map(|i| &self.items[*i])
