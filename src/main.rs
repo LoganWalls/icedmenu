@@ -1,10 +1,10 @@
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
-use iced::widget::{container, row, text, text_input, Column, Container, Row};
+use iced::widget::{container, text, text_input, Column, Container, Row};
 use iced::{
-    executor, subscription, theme, window, Application, Command, Element, Event, Length, Settings,
-    Subscription, Theme,
+    executor, subscription, theme, window, Application, Color, Command, Element, Event, Length,
+    Settings, Subscription, Theme,
 };
 use std::cmp::{Ord, Ordering};
 use std::io::{self, Write};
@@ -99,6 +99,8 @@ struct IcedMenuTheme {
     item_font_size: u16,
     item_padding: u16,
     item_spacing: u16,
+    highlight_matches: bool,
+    match_highlight_color: Color,
 }
 
 impl IcedMenuTheme {
@@ -122,6 +124,8 @@ impl Default for IcedMenuTheme {
             item_font_size: 20,
             item_padding: 10,
             item_spacing: 10,
+            highlight_matches: true,
+            match_highlight_color: theme::Theme::default().palette().primary,
         }
     }
 }
@@ -150,8 +154,8 @@ impl IcedMenu {
     }
 
     fn match_item(&self, item: &Item, item_index: usize) -> Option<MatchedItem> {
-        // Don't bother matching the item if it is selected already
-        if self.selected_indices.contains(&item_index) {
+        // Don't bother matching the query is empty or the item is selected already
+        if self.query.is_empty() || self.selected_indices.contains(&item_index) {
             return Some(MatchedItem {
                 item_index,
                 score: None,
@@ -210,10 +214,29 @@ impl IcedMenu {
         under_cursor: bool,
         selected: bool,
     ) -> Container<Message> {
-        let mut content = vec![text(&item.key).size(self.menu_theme.item_font_size).into()];
+        let mut content = Vec::new();
+        // Selected indicator
         if selected {
-            content.insert(0, text("> ").into());
+            content.push(text("> ").into());
         }
+        // Item text with match highlights
+        let mut texts: Vec<Element<Message>> = item
+            .key
+            .char_indices()
+            .map(|(i, c)| {
+                let mut t = text(c).size(self.menu_theme.item_font_size);
+                match (self.menu_theme.highlight_matches, &matched.match_indices) {
+                    (true, Some(indices)) => {
+                        if indices.contains(&i) {
+                            t = t.style(self.menu_theme.match_highlight_color)
+                        }
+                    }
+                    _ => (),
+                }
+                t.into()
+            })
+            .collect();
+        content.append(&mut texts);
         container(Row::with_children(content))
             .width(Length::Fill)
             .padding(self.menu_theme.item_padding)
