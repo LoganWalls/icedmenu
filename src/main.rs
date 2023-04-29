@@ -1,7 +1,7 @@
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
-use iced::widget::{container, text, text_input, Column, Container, Row};
+use iced::widget::{button, text, text_input, Button, Column, Row};
 use iced::{
     executor, subscription, theme, window, Application, Color, Command, Element, Event, Length,
     Settings, Subscription, Theme,
@@ -86,7 +86,8 @@ enum CursorMoveDirection {
 enum Message {
     QueryChanged(String),
     CursorMoved(CursorMoveDirection),
-    SelectionToggled,
+    CursorSelectionToggled,
+    MouseClicked(usize),
     Submitted,
     Quit,
 }
@@ -203,8 +204,36 @@ impl IcedMenu {
         }
     }
 
+    fn toggle_selection(&mut self, index: usize) {
+        let existing_index = self.selected_indices.iter().position(|&x| x == index);
+        match existing_index {
+            Some(i) => {
+                self.selected_indices.remove(i);
+            }
+            None => self.selected_indices.push(index),
+        }
+    }
+
+    fn match_under_cursor(&self) -> &MatchedItem {
+        &self.matches[self.cursor_position]
+    }
+
     fn matched_item(&self, matched: &MatchedItem) -> &Item {
         &self.items[matched.item_index]
+    }
+
+    fn submit(&self, indices: &Vec<usize>) {
+        let selected_items: Vec<&Item> = indices.iter().map(|i| &self.items[*i]).collect();
+        io::stdout()
+            .write_all(
+                (selected_items
+                    .iter()
+                    .map(|item| item.value.clone())
+                    .collect::<Vec<String>>()
+                    .join("\n"))
+                .as_bytes(),
+            )
+            .unwrap();
     }
 
     fn render_item(
@@ -213,7 +242,7 @@ impl IcedMenu {
         matched: &MatchedItem,
         under_cursor: bool,
         selected: bool,
-    ) -> Container<Message> {
+    ) -> Button<Message> {
         let mut content = Vec::new();
         // Selected indicator
         if selected {
@@ -237,16 +266,19 @@ impl IcedMenu {
             })
             .collect();
         content.append(&mut texts);
-        container(Row::with_children(content))
+        button(Row::with_children(content))
             .width(Length::Fill)
             .padding(self.menu_theme.item_padding)
             .style(if under_cursor {
-                theme::Container::Box
+                theme::Button::Primary
             } else {
-                theme::Container::Transparent
+                theme::Button::Secondary
             })
+            .on_press(Message::MouseClicked(matched.item_index))
     }
 }
+
+const QUERY_INPUT_ID: &str = "query_input";
 
 impl Application for IcedMenu {
     type Executor = executor::Default;
@@ -263,7 +295,7 @@ impl Application for IcedMenu {
                 value: x.to_string(),
             })
             .collect();
-        let query_input_id = text_input::Id::new("query_input");
+        let query_input_id = text_input::Id::new(QUERY_INPUT_ID);
         let mut menu = Self {
             menu_theme: flags.menu_theme,
             prompt: flags.prompt,
@@ -335,39 +367,18 @@ impl Application for IcedMenu {
                 self.move_cursor(direction);
                 Command::none()
             }
-            Message::SelectionToggled => {
-                let selected_index = self.matches[self.cursor_position].item_index;
-                let existing_index = self
-                    .selected_indices
-                    .iter()
-                    .position(|&x| x == selected_index);
-                match existing_index {
-                    Some(i) => {
-                        self.selected_indices.remove(i);
-                    }
-                    None => self.selected_indices.push(selected_index),
-                }
+            Message::CursorSelectionToggled => {
+                self.toggle_selection(self.match_under_cursor().item_index);
                 Command::none()
             }
+            Message::MouseClicked(index) => {
+                self.toggle_selection(index);
+                self.submit(&self.selected_indices);
+                window::close()
+            }
             Message::Submitted => {
-                let selected_items: Vec<&Item> = if self.selected_indices.len() > 0 {
-                    self.selected_indices
-                        .iter()
-                        .map(|i| &self.items[*i])
-                        .collect()
-                } else {
-                    vec![self.matched_item(&self.matches[self.cursor_position])]
-                };
-                io::stdout()
-                    .write_all(
-                        (selected_items
-                            .iter()
-                            .map(|item| item.value.clone())
-                            .collect::<Vec<String>>()
-                            .join("\n"))
-                        .as_bytes(),
-                    )
-                    .unwrap();
+                self.toggle_selection(self.match_under_cursor().item_index);
+                self.submit(&self.selected_indices);
                 window::close()
             }
             Message::Quit => window::close(),
@@ -389,7 +400,7 @@ impl Application for IcedMenu {
                 (KeyCode::J, keyboard::Modifiers::CTRL) | (KeyCode::Down, _) => {
                     Some(Message::CursorMoved(CursorMoveDirection::Down))
                 }
-                (KeyCode::Tab, _) => Some(Message::SelectionToggled),
+                (KeyCode::Tab, _) => Some(Message::CursorSelectionToggled),
                 (KeyCode::Escape, _) | (KeyCode::D, keyboard::Modifiers::CTRL) => {
                     Some(Message::Quit)
                 }
