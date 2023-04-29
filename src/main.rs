@@ -1,7 +1,7 @@
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
-use iced::widget::{container, row, text, text_input, Column};
+use iced::widget::{container, row, text, text_input, Column, Container, Row};
 use iced::{
     executor, subscription, theme, window, Application, Command, Element, Event, Length, Settings,
     Subscription, Theme,
@@ -149,17 +149,25 @@ impl IcedMenu {
         self.matches.sort_by(|a, b| b.cmp(a));
     }
 
-    fn match_item(&self, item: &Item, index: usize) -> Option<MatchedItem> {
+    fn match_item(&self, item: &Item, item_index: usize) -> Option<MatchedItem> {
+        // Don't bother matching the item if it is selected already
+        if self.selected_indices.contains(&item_index) {
+            return Some(MatchedItem {
+                item_index,
+                score: None,
+                match_indices: None,
+            });
+        }
         match self.fuzzy_matcher.fuzzy_indices(&item.key, &self.query) {
             Some((score, match_indices)) => Some(MatchedItem {
-                item_index: index,
+                item_index,
                 score: Some(score as u32),
                 match_indices: Some(match_indices),
             }),
             None => {
-                if self.selected_indices.contains(&index) {
+                if self.selected_indices.contains(&item_index) {
                     Some(MatchedItem {
-                        item_index: index,
+                        item_index,
                         score: None,
                         match_indices: None,
                     })
@@ -193,6 +201,27 @@ impl IcedMenu {
 
     fn matched_item(&self, matched: &MatchedItem) -> &Item {
         &self.items[matched.item_index]
+    }
+
+    fn render_item(
+        &self,
+        item: &Item,
+        matched: &MatchedItem,
+        under_cursor: bool,
+        selected: bool,
+    ) -> Container<Message> {
+        let mut content = vec![text(&item.key).size(self.menu_theme.item_font_size).into()];
+        if selected {
+            content.insert(0, text("> ").into());
+        }
+        container(Row::with_children(content))
+            .width(Length::Fill)
+            .padding(self.menu_theme.item_padding)
+            .style(if under_cursor {
+                theme::Container::Box
+            } else {
+                theme::Container::Transparent
+            })
     }
 }
 
@@ -246,17 +275,15 @@ impl Application for IcedMenu {
             .id(self.query_input_id.clone());
         let mut content = vec![query_input.into()];
         self.matches.iter().enumerate().for_each(|(i, m)| {
-            let item = self.matched_item(m);
-            let is_under_cursor = i == self.cursor_position;
-            let t = container(row![text(&item.key).size(self.menu_theme.item_font_size)])
-                .width(Length::Fill)
-                .padding(self.menu_theme.item_padding)
-                .style(if is_under_cursor {
-                    theme::Container::Box
-                } else {
-                    theme::Container::Transparent
-                });
-            content.push(t.into());
+            content.push(
+                self.render_item(
+                    self.matched_item(m),
+                    m,
+                    i == self.cursor_position,
+                    self.selected_indices.contains(&m.item_index),
+                )
+                .into(),
+            );
         });
         Column::with_children(content)
             .padding(self.menu_theme.padding)
