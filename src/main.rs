@@ -114,15 +114,13 @@ impl IcedMenuTheme {
 
 impl Default for IcedMenuTheme {
     fn default() -> Self {
-        let font_size = 20;
-        let item_padding = 20;
         Self {
             window_width: 400,
-            padding: 20,
-            query_font_size: font_size,
-            query_padding: item_padding,
-            item_font_size: font_size,
-            item_padding,
+            padding: 10,
+            query_font_size: 20,
+            query_padding: 10,
+            item_font_size: 20,
+            item_padding: 10,
             item_spacing: 10,
         }
     }
