@@ -1,81 +1,15 @@
+use crate::item::Item;
 use crate::settings::IcedMenuTheme;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
+use iced::widget::text_input;
 use iced::widget::Column;
-use iced::widget::{button, text, text_input, Button, Row};
 use iced::{
-    executor, subscription, theme, window, Application, Command, Element, Event, Length,
-    Subscription, Theme,
+    executor, subscription, theme, window, Application, Command, Element, Event, Subscription,
+    Theme,
 };
-use std::cmp::{Ord, Ordering};
 use std::io::{self, Write};
-
-#[derive(Eq, PartialEq, PartialOrd)]
-struct Item {
-    index: usize,
-    key: String,
-    value: String,
-    score: Option<u32>,
-    match_indices: Option<Vec<usize>>,
-    selected: bool,
-}
-
-impl Item {
-    fn new(index: usize, key: String, value: String) -> Self {
-        Self {
-            index,
-            key,
-            value,
-            score: None,
-            match_indices: None,
-            selected: false,
-        }
-    }
-    fn view(&self, theme: &IcedMenuTheme) -> Button<Message> {
-        let mut content = Vec::new();
-        // Selected indicator
-        if self.selected {
-            content.push(text("> ").into());
-        }
-        // Item text with match highlights
-        let mut texts: Vec<Element<Message>> = self
-            .key
-            .char_indices()
-            .map(|(i, c)| {
-                let mut t = text(c).size(theme.item_font_size);
-                match (theme.highlight_matches, &self.match_indices) {
-                    (true, Some(indices)) => {
-                        if indices.contains(&i) {
-                            t = t.style(theme.match_highlight_color)
-                        }
-                    }
-                    _ => (),
-                }
-                t.into()
-            })
-            .collect();
-        content.append(&mut texts);
-        button(Row::with_children(content))
-            .width(Length::Fill)
-            .padding(theme.item_padding)
-            .on_press(Message::MouseClicked(self.index))
-    }
-}
-
-impl Ord for Item {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match (self.score, other.score) {
-            // Sort by score
-            (Some(a), Some(b)) => a.cmp(&b),
-            // Items with a score should be above those without
-            (Some(_), _) => Ordering::Greater,
-            (None, Some(_)) => Ordering::Less,
-            // Fallback to the order of the items in the input
-            (_, _) => self.index.cmp(&other.index).reverse(),
-        }
-    }
-}
 
 pub struct IcedMenu {
     prompt: String,
