@@ -23,6 +23,49 @@ struct MatchedItem {
     match_indices: Option<Vec<usize>>,
 }
 
+impl MatchedItem {
+    fn view(
+        &self,
+        item: &Item,
+        theme: &IcedMenuTheme,
+        selected: bool,
+        under_cursor: bool,
+    ) -> Button<Message> {
+        let mut content = Vec::new();
+        // Selected indicator
+        if selected {
+            content.push(text("> ").into());
+        }
+        // Item text with match highlights
+        let mut texts: Vec<Element<Message>> = item
+            .key
+            .char_indices()
+            .map(|(i, c)| {
+                let mut t = text(c).size(theme.item_font_size);
+                match (theme.highlight_matches, &self.match_indices) {
+                    (true, Some(indices)) => {
+                        if indices.contains(&i) {
+                            t = t.style(theme.match_highlight_color)
+                        }
+                    }
+                    _ => (),
+                }
+                t.into()
+            })
+            .collect();
+        content.append(&mut texts);
+        button(Row::with_children(content))
+            .width(Length::Fill)
+            .padding(theme.item_padding)
+            .style(if under_cursor {
+                theme::Button::Primary
+            } else {
+                theme::Button::Text
+            })
+            .on_press(Message::MouseClicked(self.item_index))
+    }
+}
+
 impl Ord for MatchedItem {
     fn cmp(&self, other: &Self) -> Ordering {
         match (self.score, other.score) {
@@ -140,47 +183,6 @@ impl IcedMenu {
             )
             .unwrap();
     }
-
-    fn render_item(
-        &self,
-        item: &Item,
-        matched: &MatchedItem,
-        under_cursor: bool,
-        selected: bool,
-    ) -> Button<Message> {
-        let mut content = Vec::new();
-        // Selected indicator
-        if selected {
-            content.push(text("> ").into());
-        }
-        // Item text with match highlights
-        let mut texts: Vec<Element<Message>> = item
-            .key
-            .char_indices()
-            .map(|(i, c)| {
-                let mut t = text(c).size(self.menu_theme.item_font_size);
-                match (self.menu_theme.highlight_matches, &matched.match_indices) {
-                    (true, Some(indices)) => {
-                        if indices.contains(&i) {
-                            t = t.style(self.menu_theme.match_highlight_color)
-                        }
-                    }
-                    _ => (),
-                }
-                t.into()
-            })
-            .collect();
-        content.append(&mut texts);
-        button(Row::with_children(content))
-            .width(Length::Fill)
-            .padding(self.menu_theme.item_padding)
-            .style(if under_cursor {
-                theme::Button::Primary
-            } else {
-                theme::Button::Text
-            })
-            .on_press(Message::MouseClicked(matched.item_index))
-    }
 }
 
 impl Default for IcedMenu {
@@ -275,11 +277,11 @@ impl Application for IcedMenu {
         let mut content = vec![query_input.into()];
         self.matches.iter().enumerate().for_each(|(i, m)| {
             content.push(
-                self.render_item(
+                m.view(
                     self.matched_item(m),
-                    m,
-                    i == self.cursor_position,
+                    &self.menu_theme,
                     self.selected_indices.contains(&m.item_index),
+                    i == self.cursor_position,
                 )
                 .into(),
             );
