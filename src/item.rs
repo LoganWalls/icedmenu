@@ -3,14 +3,16 @@ use crate::theme::IcedMenuTheme;
 use iced::widget::{button, text, Button, Row};
 use iced::{Element, Length};
 use std::cmp::{Ord, Ordering};
+use std::{error::Error, io};
 
 #[derive(Debug, Eq, PartialEq, PartialOrd, serde::Deserialize, serde::Serialize)]
 pub struct ItemData {
     pub key: String,
-    pub value: String,
+    #[serde(default)]
+    pub value: Option<String>,
 }
 
-#[derive(Eq, PartialEq, PartialOrd)]
+#[derive(Debug, Eq, PartialEq, PartialOrd)]
 pub struct Item {
     pub index: usize,
     pub data: ItemData,
@@ -20,10 +22,10 @@ pub struct Item {
 }
 
 impl Item {
-    pub fn new(index: usize, key: String, value: String) -> Self {
+    pub fn new(index: usize, data: ItemData) -> Self {
         Self {
             index,
-            data: ItemData { key, value },
+            data,
             score: None,
             match_indices: None,
             selected: false,
@@ -73,4 +75,15 @@ impl Ord for Item {
             (_, _) => self.index.cmp(&other.index).reverse(),
         }
     }
+}
+
+pub fn parse_items(source: impl io::Read) -> Result<Vec<Item>, Box<dyn Error>> {
+    let mut rdr = csv::ReaderBuilder::new()
+        .has_headers(false)
+        .from_reader(source);
+    let mut result = Vec::new();
+    for (i, data) in rdr.deserialize::<ItemData>().enumerate() {
+        result.push(Item::new(i, data?));
+    }
+    Ok(result)
 }

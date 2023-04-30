@@ -6,8 +6,9 @@ use crate::menu::{Flags, IcedMenu};
 use crate::theme::IcedMenuTheme;
 use clap::{Parser, ValueEnum};
 use iced::{window, Application, Settings};
+use std::error::Error;
 use std::fs::File;
-use std::io::{self, BufRead};
+use std::io;
 use std::path::PathBuf;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -46,22 +47,23 @@ pub struct CliArgs {
     /// The maximum number of items that can be selected
     #[arg(short, long, default_value_t = 1)]
     max: usize,
+
+    /// The maximum number of items that can be displayed at once
+    #[arg(long, default_value_t = 10)]
+    max_visible: usize,
 }
 
 impl CliArgs {
-    fn read_items(&self) -> Vec<String> {
+    fn get_items(&self) -> Result<Vec<item::Item>, Box<dyn Error>> {
         match &self.file {
             Some(path) => {
-                let file = File::open(path).unwrap();
-                io::BufReader::new(file)
-                    .lines()
-                    .map(|x| x.unwrap_or_default())
-                    .collect::<Vec<String>>()
+                let source = io::BufReader::new(File::open(path)?);
+                Ok(item::parse_items(source)?)
             }
-            None => io::stdin()
-                .lines()
-                .map(|x| x.unwrap_or_default())
-                .collect::<Vec<String>>(),
+            None => {
+                let source = io::stdin();
+                Ok(item::parse_items(source)?)
+            }
         }
     }
 
@@ -75,7 +77,15 @@ impl CliArgs {
 
 fn main() -> iced::Result {
     let cli_args = CliArgs::parse();
-    let flags = Flags::new(cli_args);
+    let items = cli_args
+        .get_items()
+        .expect("Error parsing items is your format correct?");
+    let n_visible_items = items.len().min(cli_args.max_visible);
+    let flags = Flags {
+        items,
+        theme: cli_args.get_theme(),
+        cli_args,
+    };
 
     // Get input from stdin
     let window = window::Settings {
@@ -83,7 +93,7 @@ fn main() -> iced::Result {
         always_on_top: true,
         max_size: Some((
             flags.theme.window_width,
-            flags.theme.window_height(flags.items.len() as u16),
+            flags.theme.window_height(n_visible_items as u16),
         )),
         ..window::Settings::default()
     };

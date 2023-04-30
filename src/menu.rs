@@ -46,17 +46,18 @@ impl IcedMenu {
             }
         });
 
-        if self.query.is_empty() {
-            self.visible_items = self.items.iter().map(|item| item.index).collect();
-            return;
-        }
         let mut candidates: Vec<&Item> = self
             .items
             .iter()
-            .filter(|item| item.score.is_some() || item.selected)
+            .filter(|item| self.query.is_empty() || item.score.is_some())
             .collect();
         candidates.sort_by(|a, b| b.cmp(&a));
-        self.visible_items = candidates.iter().map(|item| item.index).collect();
+        self.visible_items = candidates
+            .iter()
+            .take(self.cli_args.max_visible - self.selected_items.len())
+            .map(|item| item.index)
+            .chain(self.selected_items.iter().copied())
+            .collect();
     }
 
     fn move_cursor(&mut self, direction: CursorMoveDirection) {
@@ -115,7 +116,10 @@ impl IcedMenu {
             .write_all(
                 (selected_items
                     .iter()
-                    .map(|item| item.data.value.clone())
+                    .map(|item| match &item.data.value {
+                        Some(value) => value.clone(),
+                        None => item.data.key.clone(),
+                    })
                     .collect::<Vec<String>>()
                     .join("\n"))
                 .as_bytes(),
@@ -169,18 +173,8 @@ pub enum Message {
 
 pub struct Flags {
     pub cli_args: CliArgs,
-    pub items: Vec<String>,
+    pub items: Vec<Item>,
     pub theme: IcedMenuTheme,
-}
-
-impl Flags {
-    pub fn new(cli_args: CliArgs) -> Self {
-        Self {
-            items: cli_args.read_items(),
-            theme: cli_args.get_theme(),
-            cli_args,
-        }
-    }
 }
 
 const QUERY_INPUT_ID: &str = "query_input";
@@ -192,19 +186,13 @@ impl Application for IcedMenu {
     type Theme = Theme;
 
     fn new(flags: Self::Flags) -> (Self, Command<Self::Message>) {
-        let items = flags
-            .items
-            .iter()
-            .enumerate()
-            .map(|(i, x)| Item::new(i, x.to_string(), x.to_string()))
-            .collect();
         let query_input_id = text_input::Id::new(QUERY_INPUT_ID);
         let mut menu = Self {
             fuzzy_matcher: new_matcher(&flags.cli_args),
             query: flags.cli_args.query.clone(),
             cli_args: flags.cli_args,
             menu_theme: flags.theme,
-            items,
+            items: flags.items,
             visible_items: Vec::new(),
             selected_items: Vec::new(),
             cursor_position: 0,
