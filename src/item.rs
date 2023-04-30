@@ -4,11 +4,16 @@ use iced::widget::{button, text, Button, Row};
 use iced::{Element, Length};
 use std::cmp::{Ord, Ordering};
 
+#[derive(Debug, Eq, PartialEq, PartialOrd, serde::Deserialize, serde::Serialize)]
+pub struct ItemData {
+    pub key: String,
+    pub value: String,
+}
+
 #[derive(Eq, PartialEq, PartialOrd)]
 pub struct Item {
     pub index: usize,
-    pub key: String,
-    pub value: String,
+    pub data: ItemData,
     pub score: Option<u32>,
     pub match_indices: Option<Vec<usize>>,
     pub selected: bool,
@@ -18,8 +23,7 @@ impl Item {
     pub fn new(index: usize, key: String, value: String) -> Self {
         Self {
             index,
-            key,
-            value,
+            data: ItemData { key, value },
             score: None,
             match_indices: None,
             selected: false,
@@ -33,6 +37,7 @@ impl Item {
         }
         // Item text with match highlights
         let mut texts: Vec<Element<Message>> = self
+            .data
             .key
             .char_indices()
             .map(|(i, c)| {

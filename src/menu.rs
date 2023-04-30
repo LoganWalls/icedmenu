@@ -31,7 +31,10 @@ impl IcedMenu {
                 item.match_indices = None;
                 return;
             }
-            match self.fuzzy_matcher.fuzzy_indices(&item.key, &self.query) {
+            match self
+                .fuzzy_matcher
+                .fuzzy_indices(&item.data.key, &self.query)
+            {
                 Some((score, match_indices)) => {
                     item.score = Some(score as u32);
                     item.match_indices = Some(match_indices);
@@ -112,7 +115,7 @@ impl IcedMenu {
             .write_all(
                 (selected_items
                     .iter()
-                    .map(|item| item.value.clone())
+                    .map(|item| item.data.value.clone())
                     .collect::<Vec<String>>()
                     .join("\n"))
                 .as_bytes(),
