@@ -1,9 +1,9 @@
 mod item;
 mod menu;
-mod settings;
+mod theme;
 
 use crate::menu::{Flags, IcedMenu};
-use crate::settings::IcedMenuTheme;
+use crate::theme::IcedMenuTheme;
 use clap::{Parser, ValueEnum};
 use iced::{window, Application, Settings};
 use std::fs::File;
