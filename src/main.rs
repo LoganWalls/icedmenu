@@ -31,6 +31,10 @@ pub struct CliArgs {
     #[arg(long, value_enum, default_value_t = CaseSensitivity::Smart)]
     case: CaseSensitivity,
 
+    /// The maximum number of items that can be selected
+    #[arg(short, long, default_value_t = 1)]
+    max: usize,
+
     /// The prompt to be displayed
     #[arg(short, long, default_value_t = String::from(""))]
     prompt: String,

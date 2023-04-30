@@ -17,6 +17,7 @@ pub struct IcedMenu {
     menu_theme: IcedMenuTheme,
     items: Vec<Item>,
     visible_items: Vec<usize>,
+    selected_items: Vec<usize>,
     query: String,
     cursor_position: usize,
     fuzzy_matcher: SkimMatcherV2,
@@ -76,9 +77,29 @@ impl IcedMenu {
         };
     }
 
-    fn toggle_selection(&mut self, index: usize) {
+    fn update_selection(&mut self, index: usize, change: SelectionChange) {
         let mut item = &mut self.items[index];
-        item.selected = !item.selected;
+        match change {
+            SelectionChange::Select => {
+                if self.selected_items.len() < self.cli_args.max {
+                    self.selected_items.push(index);
+                    item.selected = true;
+                }
+            }
+            SelectionChange::Deselect => {
+                self.selected_items.swap_remove(
+                    self.selected_items
+                        .iter()
+                        .position(|x| *x == index)
+                        .unwrap(),
+                );
+                item.selected = false;
+            }
+            SelectionChange::Toggle => {
+                let new_change = SelectionChange::toggle_change(item.selected);
+                self.update_selection(index, new_change);
+            }
+        };
     }
 
     fn index_under_cursor(&self) -> usize {
@@ -114,6 +135,23 @@ pub enum CursorMoveDirection {
     Up,
     Down,
     Reset,
+}
+
+#[derive(Debug, Clone)]
+enum SelectionChange {
+    Select,
+    Deselect,
+    Toggle,
+}
+
+impl SelectionChange {
+    fn toggle_change(selected: bool) -> Self {
+        if selected {
+            Self::Deselect
+        } else {
+            Self::Select
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -165,6 +203,7 @@ impl Application for IcedMenu {
             menu_theme: flags.theme,
             items,
             visible_items: Vec::new(),
+            selected_items: Vec::new(),
             cursor_position: 0,
         };
         menu.update_items();
@@ -234,16 +273,16 @@ impl Application for IcedMenu {
                 Command::none()
             }
             Message::CursorSelectionToggled => {
-                self.toggle_selection(self.index_under_cursor());
+                self.update_selection(self.index_under_cursor(), SelectionChange::Toggle);
                 Command::none()
             }
             Message::MouseClicked(index) => {
-                self.toggle_selection(index);
+                self.update_selection(index, SelectionChange::Toggle);
                 self.submit();
                 window::close()
             }
             Message::Submitted => {
-                self.toggle_selection(self.index_under_cursor());
+                self.update_selection(self.index_under_cursor(), SelectionChange::Select);
                 self.submit();
                 window::close()
             }
