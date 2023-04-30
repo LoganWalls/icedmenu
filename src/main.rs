@@ -4,11 +4,21 @@ mod settings;
 
 use crate::menu::{Flags, IcedMenu};
 use crate::settings::IcedMenuTheme;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use iced::{window, Application, Settings};
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::PathBuf;
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum CaseSensitivity {
+    /// Case-insensitive only when query is entirely lowercase
+    Smart,
+    /// Case-sensitive search
+    Respect,
+    /// Case-insensitive search
+    Ignore,
+}
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -17,10 +27,9 @@ pub struct CliArgs {
     #[arg(short, long, value_name = "FILE")]
     file: Option<PathBuf>,
 
-    // TODO: implement
-    /// Allow mutliple items to be selected
-    // #[arg(short, long)]
-    // multi: bool,
+    /// How to treat case-sensitivity
+    #[arg(long, value_enum, default_value_t = CaseSensitivity::Smart)]
+    case: CaseSensitivity,
 
     /// The prompt to be displayed
     #[arg(short, long, default_value_t = String::from(""))]

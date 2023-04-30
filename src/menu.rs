@@ -1,6 +1,6 @@
 use crate::item::Item;
 use crate::settings::IcedMenuTheme;
-use crate::CliArgs;
+use crate::{CaseSensitivity, CliArgs};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
@@ -100,6 +100,15 @@ impl IcedMenu {
     }
 }
 
+fn new_matcher(cli_args: &CliArgs) -> SkimMatcherV2 {
+    let matcher = SkimMatcherV2::default();
+    match cli_args.case {
+        CaseSensitivity::Smart => matcher.smart_case(),
+        CaseSensitivity::Respect => matcher.respect_case(),
+        CaseSensitivity::Ignore => matcher.ignore_case(),
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum CursorMoveDirection {
     Up,
@@ -150,13 +159,13 @@ impl Application for IcedMenu {
             .collect();
         let query_input_id = text_input::Id::new(QUERY_INPUT_ID);
         let mut menu = Self {
+            fuzzy_matcher: new_matcher(&flags.cli_args),
             query: flags.cli_args.query.clone(),
             cli_args: flags.cli_args,
             menu_theme: flags.theme,
             items,
             visible_items: Vec::new(),
             cursor_position: 0,
-            fuzzy_matcher: SkimMatcherV2::default(),
         };
         menu.update_items();
         (
