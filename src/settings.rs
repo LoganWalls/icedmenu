@@ -1,5 +1,6 @@
 use iced::{theme, Color};
 
+#[derive(Debug)]
 pub struct IcedMenuTheme {
     pub window_width: u32,
     pub padding: u16,

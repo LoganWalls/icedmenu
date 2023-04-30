@@ -1,5 +1,6 @@
 use crate::item::Item;
 use crate::settings::IcedMenuTheme;
+use crate::CliArgs;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
@@ -12,7 +13,7 @@ use iced::{
 use std::io::{self, Write};
 
 pub struct IcedMenu {
-    prompt: String,
+    cli_args: CliArgs,
     menu_theme: IcedMenuTheme,
     items: Vec<Item>,
     visible_items: Vec<usize>,
@@ -99,28 +100,6 @@ impl IcedMenu {
     }
 }
 
-impl Default for IcedMenu {
-    fn default() -> Self {
-        Self {
-            menu_theme: IcedMenuTheme::default(),
-            prompt: String::from(""),
-            query: String::from(""),
-            items: Vec::new(),
-            visible_items: Vec::new(),
-            cursor_position: 0,
-            fuzzy_matcher: SkimMatcherV2::default(),
-        }
-    }
-}
-
-#[derive(Default)]
-pub struct Flags {
-    pub prompt: String,
-    pub items: Vec<String>,
-    pub query: String,
-    pub menu_theme: IcedMenuTheme,
-}
-
 #[derive(Debug, Clone)]
 pub enum CursorMoveDirection {
     Up,
@@ -136,6 +115,22 @@ pub enum Message {
     MouseClicked(usize),
     Submitted,
     Quit,
+}
+
+pub struct Flags {
+    pub cli_args: CliArgs,
+    pub items: Vec<String>,
+    pub theme: IcedMenuTheme,
+}
+
+impl Flags {
+    pub fn new(cli_args: CliArgs) -> Self {
+        Self {
+            items: cli_args.read_items(),
+            theme: cli_args.get_theme(),
+            cli_args,
+        }
+    }
 }
 
 const QUERY_INPUT_ID: &str = "query_input";
@@ -155,9 +150,9 @@ impl Application for IcedMenu {
             .collect();
         let query_input_id = text_input::Id::new(QUERY_INPUT_ID);
         let mut menu = Self {
-            menu_theme: flags.menu_theme,
-            prompt: flags.prompt,
-            query: flags.query,
+            query: flags.cli_args.query.clone(),
+            cli_args: flags.cli_args,
+            menu_theme: flags.theme,
             items,
             visible_items: Vec::new(),
             cursor_position: 0,
@@ -174,11 +169,11 @@ impl Application for IcedMenu {
     }
 
     fn title(&self) -> String {
-        return self.prompt.clone();
+        return self.cli_args.prompt.clone();
     }
 
     fn view(&self) -> Element<Message> {
-        let query_input = text_input(&self.prompt, &self.query)
+        let query_input = text_input(&self.cli_args.prompt, &self.query)
             .size(self.menu_theme.query_font_size)
             .on_input(Message::QueryChanged)
             .on_submit(Message::Submitted)
