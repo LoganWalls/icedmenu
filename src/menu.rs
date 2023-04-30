@@ -1,5 +1,5 @@
 use crate::item::Item;
-use crate::settings::IcedMenuTheme;
+use crate::theme::IcedMenuTheme;
 use crate::{CaseSensitivity, CliArgs};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;

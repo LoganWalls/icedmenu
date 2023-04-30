@@ -1,5 +1,5 @@
 use crate::menu::Message;
-use crate::settings::IcedMenuTheme;
+use crate::theme::IcedMenuTheme;
 use iced::widget::{button, text, Button, Row};
 use iced::{Element, Length};
 use std::cmp::{Ord, Ordering};

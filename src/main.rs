@@ -23,18 +23,6 @@ enum CaseSensitivity {
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct CliArgs {
-    /// Read items from a file instead of stdin
-    #[arg(short, long, value_name = "FILE")]
-    file: Option<PathBuf>,
-
-    /// How to treat case-sensitivity
-    #[arg(long, value_enum, default_value_t = CaseSensitivity::Smart)]
-    case: CaseSensitivity,
-
-    /// The maximum number of items that can be selected
-    #[arg(short, long, default_value_t = 1)]
-    max: usize,
-
     /// The prompt to be displayed
     #[arg(short, long, default_value_t = String::from(""))]
     prompt: String,
@@ -43,9 +31,21 @@ pub struct CliArgs {
     #[arg(short, long, default_value_t = String::from(""))]
     query: String,
 
+    /// Read items from a file instead of stdin
+    #[arg(short, long, value_name = "FILE")]
+    file: Option<PathBuf>,
+
     /// Read a theme from a file
     #[arg(short, long, value_name = "FILE")]
     theme: Option<PathBuf>,
+
+    /// How to treat case-sensitivity
+    #[arg(long, value_enum, default_value_t = CaseSensitivity::Smart)]
+    case: CaseSensitivity,
+
+    /// The maximum number of items that can be selected
+    #[arg(short, long, default_value_t = 1)]
+    max: usize,
 }
 
 impl CliArgs {
