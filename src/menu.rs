@@ -1,4 +1,5 @@
-use crate::item::Item;
+use crate::callback::Callback;
+use crate::item::{self, Item};
 use crate::theme::IcedMenuTheme;
 use crate::{CaseSensitivity, CliArgs};
 use fuzzy_matcher::skim::SkimMatcherV2;
@@ -10,7 +11,9 @@ use iced::{
     executor, subscription, theme, window, Application, Command, Element, Event, Subscription,
     Theme,
 };
+use std::error::Error;
 use std::io::{self, Write};
+use std::path::PathBuf;
 
 pub struct IcedMenu {
     cli_args: CliArgs,
@@ -21,10 +24,18 @@ pub struct IcedMenu {
     query: String,
     cursor_position: usize,
     fuzzy_matcher: SkimMatcherV2,
+    callback: Option<Callback>,
 }
 
 impl IcedMenu {
     fn update_items(&mut self) {
+        if let Some(callback) = &mut self.callback {
+            self.items = callback.call(&self.query);
+            self.items.truncate(self.cli_args.max_visible);
+            self.selected_items = Vec::new();
+            self.visible_items = Vec::from_iter(0..self.items.len());
+            return;
+        }
         self.items.iter_mut().for_each(|item| {
             if self.query.is_empty() || item.selected {
                 item.score = None;
@@ -175,6 +186,45 @@ pub struct Flags {
     pub cli_args: CliArgs,
     pub items: Vec<Item>,
     pub theme: IcedMenuTheme,
+    pub callback: Option<Callback>,
+}
+
+impl Flags {
+    pub fn new(cli_args: CliArgs) -> Self {
+        let mut callback = cli_args.callback.clone().map(Callback::new);
+        Self {
+            items: Self::get_items(&cli_args.file, &cli_args.query, &mut callback)
+                .expect("Error while parsing items"),
+            theme: Self::get_theme(&cli_args.theme),
+            callback,
+            cli_args,
+        }
+    }
+
+    fn get_items(
+        path: &Option<PathBuf>,
+        query: &str,
+        callback: &mut Option<Callback>,
+    ) -> Result<Vec<Item>, Box<dyn Error>> {
+        match (path, callback) {
+            (Some(p), _) => {
+                let source = std::fs::File::open(p)?;
+                Ok(item::parse_items(source)?)
+            }
+            (None, Some(c)) => Ok(c.call(query)),
+            (_, _) => {
+                let source = io::stdin();
+                Ok(item::parse_items(source)?)
+            }
+        }
+    }
+
+    fn get_theme(path: &Option<PathBuf>) -> IcedMenuTheme {
+        match path {
+            Some(_) => todo!(),
+            None => IcedMenuTheme::default(),
+        }
+    }
 }
 
 const QUERY_INPUT_ID: &str = "query_input";
@@ -190,9 +240,10 @@ impl Application for IcedMenu {
         let mut menu = Self {
             fuzzy_matcher: new_matcher(&flags.cli_args),
             query: flags.cli_args.query.clone(),
-            cli_args: flags.cli_args,
             menu_theme: flags.theme,
             items: flags.items,
+            callback: flags.callback,
+            cli_args: flags.cli_args,
             visible_items: Vec::new(),
             selected_items: Vec::new(),
             cursor_position: 0,

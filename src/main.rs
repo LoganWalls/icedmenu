@@ -1,14 +1,11 @@
+mod callback;
 mod item;
 mod menu;
 mod theme;
 
 use crate::menu::{Flags, IcedMenu};
-use crate::theme::IcedMenuTheme;
 use clap::{Parser, ValueEnum, ValueHint};
 use iced::{window, Application, Settings};
-use std::error::Error;
-use std::fs::File;
-use std::io;
 use std::path::PathBuf;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -51,41 +48,17 @@ pub struct CliArgs {
     /// The maximum number of items that can be displayed at once
     #[arg(long, default_value_t = 10)]
     max_visible: usize,
-}
 
-impl CliArgs {
-    fn get_items(&self) -> Result<Vec<item::Item>, Box<dyn Error>> {
-        match &self.file {
-            Some(path) => {
-                let source = io::BufReader::new(File::open(path)?);
-                Ok(item::parse_items(source)?)
-            }
-            None => {
-                let source = io::stdin();
-                Ok(item::parse_items(source)?)
-            }
-        }
-    }
-
-    fn get_theme(&self) -> IcedMenuTheme {
-        match &self.theme {
-            Some(path) => todo!(),
-            None => IcedMenuTheme::default(),
-        }
-    }
+    /// Execute an external command to populate items whenever the query is changed
+    /// The $QUERY env variable will be set to the current query before each execution
+    #[arg(long, value_name = "COMMAND", verbatim_doc_comment)]
+    callback: Option<String>,
 }
 
 fn main() -> iced::Result {
     let cli_args = CliArgs::parse();
-    let items = cli_args
-        .get_items()
-        .expect("Error parsing items is your format correct?");
-    let n_visible_items = items.len().min(cli_args.max_visible);
-    let flags = Flags {
-        items,
-        theme: cli_args.get_theme(),
-        cli_args,
-    };
+    let flags = Flags::new(cli_args);
+    let n_visible_items = flags.items.len().min(flags.cli_args.max_visible);
 
     // Get input from stdin
     let window = window::Settings {
