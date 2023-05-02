@@ -4,7 +4,7 @@ mod theme;
 
 use crate::menu::{Flags, IcedMenu};
 use crate::theme::IcedMenuTheme;
-use clap::{Parser, ValueEnum};
+use clap::{Parser, ValueEnum, ValueHint};
 use iced::{window, Application, Settings};
 use std::error::Error;
 use std::fs::File;
@@ -33,11 +33,11 @@ pub struct CliArgs {
     query: String,
 
     /// Read items from a file instead of stdin
-    #[arg(short, long, value_name = "FILE")]
+    #[arg(short, long, value_name = "FILE", value_hint = ValueHint::FilePath)]
     file: Option<PathBuf>,
 
     /// Read a theme from a file
-    #[arg(short, long, value_name = "FILE")]
+    #[arg(short, long, value_name = "FILE", value_hint = ValueHint::FilePath)]
     theme: Option<PathBuf>,
 
     /// How to treat case-sensitivity
