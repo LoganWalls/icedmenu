@@ -1,7 +1,7 @@
 mod callback;
 mod item;
 mod menu;
-mod theme;
+mod style;
 
 use crate::menu::{Flags, IcedMenu};
 use clap::{Parser, ValueEnum, ValueHint};

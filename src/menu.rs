@@ -1,6 +1,6 @@
 use crate::callback::Callback;
 use crate::item::{self, Item};
-use crate::theme::IcedMenuTheme;
+use crate::style::IcedMenuTheme;
 use crate::{CaseSensitivity, CliArgs};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
