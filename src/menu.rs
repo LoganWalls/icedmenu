@@ -1,12 +1,12 @@
 use crate::callback::Callback;
 use crate::item::{self, Item};
-use crate::style::IcedMenuTheme;
+use crate::style::{AppContainer, Layout, LayoutNodeKind, StyleRule, LAYOUT_KEY};
 use crate::{CaseSensitivity, CliArgs};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
-use iced::widget::text_input;
-use iced::widget::Column;
+use iced::widget::{self, Column};
+use iced::widget::{container, text_input};
 use iced::{
     executor, subscription, theme, window, Application, Command, Element, Event, Subscription,
     Theme,
@@ -17,7 +17,6 @@ use std::path::PathBuf;
 
 pub struct IcedMenu {
     cli_args: CliArgs,
-    menu_theme: IcedMenuTheme,
     items: Vec<Item>,
     visible_items: Vec<usize>,
     selected_items: Vec<usize>,
@@ -25,6 +24,7 @@ pub struct IcedMenu {
     cursor_position: usize,
     fuzzy_matcher: SkimMatcherV2,
     callback: Option<Callback>,
+    layout: Layout,
 }
 
 impl IcedMenu {
@@ -117,8 +117,69 @@ impl IcedMenu {
         };
     }
 
+    fn view_from_layout(&self, node: &Layout) -> Vec<Element<Message>> {
+        let process_children = |n: &Layout| -> Vec<Element<Message>> {
+            n.children
+                .iter()
+                .map(|c| self.view_from_layout(&c))
+                .flatten()
+                .collect()
+        };
+        let process_child = |n: &Layout| -> Element<Message> {
+            assert_eq!(n.children.len(), 1);
+            self.view_from_layout(&n.children[0]).pop().unwrap()
+        };
+
+        match node.kind {
+            LayoutNodeKind::Container => vec![widget::Container::new(process_child(node)).into()],
+            LayoutNodeKind::Row => vec![widget::Row::with_children(process_children(node)).into()],
+            LayoutNodeKind::Column => {
+                vec![widget::Column::with_children(process_children(node)).into()]
+            }
+            LayoutNodeKind::Query => {
+                vec![text_input(&self.cli_args.prompt, &self.query)
+                    .size(20)
+                    .on_input(Message::QueryChanged)
+                    .on_submit(Message::Submitted)
+                    .padding(10)
+                    .id(text_input::Id::new(QUERY_INPUT_ID))
+                    .into()]
+            }
+            LayoutNodeKind::Items => self
+                .visible_items
+                .iter()
+                .enumerate()
+                .map(|(visible_index, item_index)| {
+                    let item = &self.items[*item_index];
+                    item.view()
+                        .style(if self.cursor_position == visible_index {
+                            theme::Button::Primary
+                        } else {
+                            theme::Button::Text
+                        })
+                        .into()
+                })
+                .collect(), // Maybe pass in items already in view mode and just return them here
+        }
+    }
+
     fn index_under_cursor(&self) -> usize {
         self.visible_items[self.cursor_position]
+    }
+
+    pub fn window_height(n_items: u16) -> u32 {
+        let query_font_size = 20;
+        let item_font_size = 20;
+        let query_padding = 10;
+        let item_padding = 10;
+        let padding = 10;
+        let item_spacing = 10;
+        (query_font_size
+            + 2 * query_padding
+            + n_items * (item_font_size + 2 * item_padding)
+            + n_items * item_spacing
+            + 2 * padding)
+            .into()
     }
 
     fn submit(&self) {
@@ -185,7 +246,8 @@ pub enum Message {
 pub struct Flags {
     pub cli_args: CliArgs,
     pub items: Vec<Item>,
-    pub theme: IcedMenuTheme,
+    pub layout: Layout,
+    pub styles: Vec<StyleRule>,
     pub callback: Option<Callback>,
 }
 
@@ -195,9 +257,10 @@ impl Flags {
         Self {
             items: Self::get_items(&cli_args.file, &cli_args.query, &mut callback)
                 .expect("Error while parsing items"),
-            theme: Self::get_theme(&cli_args.theme),
+            layout: Self::get_layout(&cli_args.theme).expect("Could not load theme"),
             callback,
             cli_args,
+            styles: Vec::new(),
         }
     }
 
@@ -219,15 +282,21 @@ impl Flags {
         }
     }
 
-    fn get_theme(path: &Option<PathBuf>) -> IcedMenuTheme {
-        match path {
-            Some(_) => todo!(),
-            None => IcedMenuTheme::default(),
-        }
+    fn get_layout(path: &Option<PathBuf>) -> Result<Layout, miette::ErrReport> {
+        let config: kdl::KdlDocument = std::fs::read_to_string(path.as_ref().unwrap())
+            .expect("Could not read file")
+            .parse()?;
+        let window = config
+            .get(LAYOUT_KEY)
+            .expect(&format!("Could not find {} in your config", LAYOUT_KEY));
+        // let styles = config
+        //     .get(STYLES)
+        //     .expect(&format!("Could not find {} in your config", STYLES));
+        Ok(Layout::new(window)?)
     }
 }
 
-const QUERY_INPUT_ID: &str = "query_input";
+pub const QUERY_INPUT_ID: &str = "query_input";
 
 impl Application for IcedMenu {
     type Executor = executor::Default;
@@ -240,10 +309,10 @@ impl Application for IcedMenu {
         let mut menu = Self {
             fuzzy_matcher: new_matcher(&flags.cli_args),
             query: flags.cli_args.query.clone(),
-            menu_theme: flags.theme,
             items: flags.items,
             callback: flags.callback,
             cli_args: flags.cli_args,
+            layout: flags.layout,
             visible_items: Vec::new(),
             selected_items: Vec::new(),
             cursor_position: 0,
@@ -262,34 +331,17 @@ impl Application for IcedMenu {
         return self.cli_args.prompt.clone();
     }
 
-    fn view(&self) -> Element<Message> {
-        let query_input = text_input(&self.cli_args.prompt, &self.query)
-            .size(self.menu_theme.query_font_size)
-            .on_input(Message::QueryChanged)
-            .on_submit(Message::Submitted)
-            .padding(self.menu_theme.query_padding)
-            .id(text_input::Id::new(QUERY_INPUT_ID));
-        let mut content = vec![query_input.into()];
-        let mut menu_items: Vec<Element<Message>> = self
-            .visible_items
-            .iter()
-            .enumerate()
-            .map(|(visible_index, item_index)| {
-                let item = &self.items[*item_index];
-                item.view(&self.menu_theme)
-                    .style(if self.cursor_position == visible_index {
-                        theme::Button::Primary
-                    } else {
-                        theme::Button::Text
-                    })
-                    .into()
-            })
-            .collect();
-        content.append(&mut menu_items);
+    // fn theme(&self) -> Self::Theme {
+    //     Theme::custom(theme::Palette {
+    //         background: Color::TRANSPARENT,
+    //         ..Theme::default().palette()
+    //     })
+    // }
 
-        Column::with_children(content)
-            .padding(self.menu_theme.padding)
-            .spacing(self.menu_theme.item_spacing)
+    fn view(&self) -> Element<Message> {
+        let menu = Column::with_children(self.view_from_layout(&self.layout));
+        container(menu)
+            .style(iced::theme::Container::Custom(AppContainer::new()))
             .into()
     }
 
@@ -302,10 +354,7 @@ impl Application for IcedMenu {
                 let num_items = self.visible_items.len();
                 if num_items != num_items_prev {
                     self.move_cursor(CursorMoveDirection::Reset);
-                    window::resize::<Message>(
-                        self.menu_theme.window_width,
-                        self.menu_theme.window_height(num_items as u16),
-                    )
+                    window::resize::<Message>(1000, Self::window_height(num_items as u16))
                 } else {
                     Command::none()
                 }

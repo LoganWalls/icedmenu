@@ -1,0 +1,25 @@
+Layout {
+    Row {
+        Query ".text"
+        Row ".item" {
+            Items
+        }
+    }
+}
+
+Styles {
+    Layout {
+        width 400
+        padding 10
+    }
+    Items {
+        spacing 10
+    }
+    KeyText {
+        match-highlight-color "#8839ef"
+    }
+    .text { 
+        font-size 20
+        padding 10
+    }
+}

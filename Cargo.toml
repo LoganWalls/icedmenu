@@ -10,4 +10,7 @@ clap = { version = "4.2.5", features = ["derive"] }
 csv = "1.2.1"
 fuzzy-matcher = "0.3.7"
 iced = "0.9"
+kdl = "4.6.0"
+miette = { version = "5.8.0", features = ["fancy"] }
 serde = { version = "1.0.160", features = ["derive"] }
+wgpu = "0.16.0"

@@ -63,12 +63,11 @@ fn main() -> iced::Result {
     // Get input from stdin
     let window = window::Settings {
         decorations: false,
+        resizable: false,
+        transparent: true,
         always_on_top: true,
-        max_size: Some((
-            flags.theme.window_width,
-            flags.theme.window_height(n_visible_items as u16),
-        )),
-        ..window::Settings::default()
+        max_size: Some((1000, IcedMenu::window_height(n_visible_items as u16))),
+        ..Default::default()
     };
 
     // Display app

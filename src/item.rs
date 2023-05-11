@@ -1,7 +1,6 @@
 use crate::menu::Message;
-use crate::style::IcedMenuTheme;
 use iced::widget::{button, text, Button, Row};
-use iced::{Element, Length};
+use iced::{Color, Element, Length};
 use std::cmp::{Ord, Ordering};
 use std::{error::Error, io};
 
@@ -31,7 +30,7 @@ impl Item {
             selected: false,
         }
     }
-    pub fn view(&self, theme: &IcedMenuTheme) -> Button<Message> {
+    pub fn view(&self) -> Button<Message> {
         let mut content = Vec::new();
         // Selected indicator
         if self.selected {
@@ -43,22 +42,19 @@ impl Item {
             .key
             .char_indices()
             .map(|(i, c)| {
-                let mut t = text(c).size(theme.item_font_size);
-                match (theme.highlight_matches, &self.match_indices) {
-                    (true, Some(indices)) => {
-                        if indices.contains(&i) {
-                            t = t.style(theme.match_highlight_color)
-                        }
+                let mut t = text(c).size(20);
+                if let Some(indices) = &self.match_indices {
+                    if indices.contains(&i) {
+                        t = t.style(Color::from_rgb(0.5, 0.5, 1.0))
                     }
-                    _ => (),
                 }
                 t.into()
             })
             .collect();
         content.append(&mut texts);
         button(Row::with_children(content))
-            .width(Length::Fill)
-            .padding(theme.item_padding)
+            .width(Length::Shrink)
+            .padding(10)
             .on_press(Message::MouseClicked(self.index))
     }
 }
