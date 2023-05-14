@@ -257,7 +257,7 @@ impl Flags {
         Self {
             items: Self::get_items(&cli_args.file, &cli_args.query, &mut callback)
                 .expect("Error while parsing items"),
-            layout: Self::get_layout(&cli_args.theme).expect("Could not load theme"),
+            layout: Self::get_layout(&cli_args.theme).unwrap(),
             callback,
             cli_args,
             styles: Vec::new(),
@@ -282,17 +282,24 @@ impl Flags {
         }
     }
 
-    fn get_layout(path: &Option<PathBuf>) -> Result<Layout, miette::ErrReport> {
-        let config: kdl::KdlDocument = std::fs::read_to_string(path.as_ref().unwrap())
-            .expect("Could not read file")
-            .parse()?;
+    fn get_layout(path: &Option<PathBuf>) -> miette::Result<Layout> {
+        let source_path = path.as_ref().unwrap();
+        let source = std::fs::read_to_string(&source_path).expect("Could not read file");
+        let config: kdl::KdlDocument = source.parse()?;
         let window = config
             .get(LAYOUT_KEY)
             .expect(&format!("Could not find {} in your config", LAYOUT_KEY));
         // let styles = config
         //     .get(STYLES)
         //     .expect(&format!("Could not find {} in your config", STYLES));
-        Ok(Layout::new(window)?)
+        Layout::new(window).map_err(|e| {
+            miette::Report::from(e)
+                .wrap_err("Could not read layout from config file")
+                .with_source_code(miette::NamedSource::new(
+                    &source_path.to_str().unwrap(),
+                    source,
+                ))
+        })
     }
 }
 

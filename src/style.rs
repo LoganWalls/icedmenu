@@ -1,7 +1,7 @@
-use std::str::FromStr;
-
 use iced::{theme, widget::container, Color};
-use kdl::{KdlDocument, KdlNode};
+use kdl::KdlNode;
+use miette::{Diagnostic, SourceSpan};
+use thiserror::Error;
 
 pub const LAYOUT_KEY: &str = "Layout";
 pub const STYLES_KEY: &str = "Styles";
@@ -13,20 +13,92 @@ pub enum LayoutNodeKind {
     Column,
     Query,
     Items,
-    // KeyText,
 }
 
-impl FromStr for LayoutNodeKind {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            LAYOUT_KEY | "Container" => Ok(Self::Container),
+impl LayoutNodeKind {
+    fn possible_values() -> String {
+        String::from(
+            "Container, \
+            Row, \
+            Column, \
+            Query, \
+            Items",
+        )
+    }
+
+    fn children_constraint(&self) -> Option<usize> {
+        match self {
+            Self::Query | Self::Items => Some(0),
+            Self::Container => Some(1),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Error, Diagnostic, Debug)]
+pub enum ConfigError {
+    #[error("Invalid layout node type")]
+    #[diagnostic()]
+    InvalidLayoutNode {
+        #[label("Invalid node type")]
+        node_src: SourceSpan,
+        #[help]
+        help: String,
+    },
+    #[error("Unsupported number of children")]
+    #[diagnostic()]
+    InvalidNumberOfChildren {
+        #[label("Node with unsupported children")]
+        parent_src: SourceSpan,
+        #[help]
+        help: String,
+    },
+}
+
+impl TryFrom<&kdl::KdlNode> for LayoutNodeKind {
+    type Error = ConfigError;
+    fn try_from(node: &kdl::KdlNode) -> Result<Self, Self::Error> {
+        // Determine what kind of node this is.
+        let name = node.name();
+        let kind = match name.value() {
+            "Container" | "Layout" => Ok(Self::Container),
             "Row" => Ok(Self::Row),
             "Column" => Ok(Self::Column),
             "Query" => Ok(Self::Query),
             "Items" => Ok(Self::Items),
             // "KeyText" => Ok(Self::KeyText),
-            _ => Err(format!("Invalid element name: '{}'", s)),
+            _ => Err(ConfigError::InvalidLayoutNode {
+                node_src: *name.span(),
+                help: format!(
+                    "Try changing this node to one of: {}",
+                    Self::possible_values()
+                ),
+            }),
+        }?;
+
+        // Validate the node's children
+        let children = node.children();
+        let constraint = kind.children_constraint();
+        match (children, constraint) {
+            (Some(c), Some(n)) => {
+                let child_nodes = c.nodes();
+                let cn = child_nodes.len();
+                if cn != n {
+                    Err(ConfigError::InvalidNumberOfChildren {
+                        parent_src: *node.span(),
+                        help: format!(
+                            "A {} node must have exactly {} {}, but yours has {}",
+                            name,
+                            n,
+                            if n == 1 { "child" } else { "children" },
+                            cn
+                        ),
+                    })
+                } else {
+                    Ok(kind)
+                }
+            }
+            _ => Ok(kind),
         }
     }
 }
@@ -39,9 +111,8 @@ pub struct Layout {
 }
 
 impl Layout {
-    pub fn new(node: &KdlNode) -> miette::Result<Self> {
-        // TODO: better errors via meitte
-        let kind: LayoutNodeKind = node.name().value().parse().unwrap();
+    pub fn new(node: &KdlNode) -> Result<Self, ConfigError> {
+        let kind: LayoutNodeKind = node.try_into()?;
         let children = node
             .children()
             .iter()
@@ -96,21 +167,6 @@ enum States {
 pub struct StyleRule {
     classes: Vec<String>,
     attributes: Vec<StyleAttribute>,
-}
-
-pub fn read_config() -> miette::Result<()> {
-    let config: KdlDocument = std::fs::read_to_string("examples/config.kdl")
-        .expect("Could not read file")
-        .parse()?;
-    let window = config
-        .get(LAYOUT_KEY)
-        .expect(&format!("Could not find {} in your config", LAYOUT_KEY));
-    let styles = config
-        .get(STYLES_KEY)
-        .expect(&format!("Could not find {} in your config", STYLES_KEY));
-    dbg!(Layout::new(window).unwrap());
-
-    Ok(())
 }
 
 pub struct AppContainer {}

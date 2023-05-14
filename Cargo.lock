@@ -1288,6 +1288,7 @@ dependencies = [
  "kdl",
  "miette",
  "serde",
+ "thiserror",
  "wgpu 0.16.0",
 ]
 
