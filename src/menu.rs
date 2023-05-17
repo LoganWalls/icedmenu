@@ -5,7 +5,7 @@ use crate::{CaseSensitivity, CliArgs};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
-use iced::widget::{self, Column};
+use iced::widget::{self, text, Column};
 use iced::widget::{container, text_input};
 use iced::{
     executor, subscription, theme, window, Application, Command, Element, Event, Subscription,
@@ -130,12 +130,13 @@ impl IcedMenu {
             self.view_from_layout(&n.children[0]).pop().unwrap()
         };
 
-        match node.kind {
+        match &node.kind {
             LayoutNodeKind::Container => vec![widget::Container::new(process_child(node)).into()],
             LayoutNodeKind::Row => vec![widget::Row::with_children(process_children(node)).into()],
             LayoutNodeKind::Column => {
                 vec![widget::Column::with_children(process_children(node)).into()]
             }
+            LayoutNodeKind::Text(t) => vec![text(t).into()],
             LayoutNodeKind::Query => {
                 vec![text_input(&self.cli_args.prompt, &self.query)
                     .size(20)

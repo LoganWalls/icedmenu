@@ -13,6 +13,7 @@ pub enum LayoutNodeKind {
     Column,
     Query,
     Items,
+    Text(String),
 }
 
 impl LayoutNodeKind {
@@ -21,6 +22,7 @@ impl LayoutNodeKind {
             "Container, \
             Row, \
             Column, \
+            Text, \
             Query, \
             Items",
         )
@@ -28,7 +30,7 @@ impl LayoutNodeKind {
 
     fn children_constraint(&self) -> Option<usize> {
         match self {
-            Self::Query | Self::Items => Some(0),
+            Self::Query | Self::Items | Self::Text(_) => Some(0),
             Self::Container => Some(1),
             _ => None,
         }
@@ -45,11 +47,30 @@ pub enum ConfigError {
         #[help]
         help: String,
     },
+
     #[error("Unsupported number of children")]
     #[diagnostic()]
     InvalidNumberOfChildren {
         #[label("Node with unsupported children")]
         parent_src: SourceSpan,
+        #[help]
+        help: String,
+    },
+
+    #[error("Missing argument")]
+    #[diagnostic()]
+    MissingArgument {
+        #[label("Node is missing required argument")]
+        node_src: SourceSpan,
+        #[help]
+        help: String,
+    },
+
+    #[error("Invalid argument")]
+    #[diagnostic()]
+    InvalidArgument {
+        #[label("Argument is invalid")]
+        arg_src: SourceSpan,
         #[help]
         help: String,
     },
@@ -64,6 +85,24 @@ impl TryFrom<&kdl::KdlNode> for LayoutNodeKind {
             "Container" | "Layout" => Ok(Self::Container),
             "Row" => Ok(Self::Row),
             "Column" => Ok(Self::Column),
+            "Text" => {
+                if let Some(v) = node.get("value") {
+                    if let Some(str_value) = v.value().as_string() {
+                        Ok(Self::Text(str_value.to_string()))
+                    } else {
+                        Err(ConfigError::InvalidArgument {
+                            arg_src: *v.span(),
+                            help: "The value for a Text node should be a string: `Text value=\"value\"`"
+                                .to_string(),
+                        })
+                    }
+                } else {
+                    Err(ConfigError::MissingArgument {
+                        node_src: *node.span(),
+                        help: "Text nodes require a value: `Text value=\"value\"`".to_string(),
+                    })
+                }
+            }
             "Query" => Ok(Self::Query),
             "Items" => Ok(Self::Items),
             // "KeyText" => Ok(Self::KeyText),

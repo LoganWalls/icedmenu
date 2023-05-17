@@ -1,7 +1,8 @@
 Layout {
-    Row {
+    Column {
         Query ".text"
-        Row ".item" {
+        Text value="hi!!!"
+        Column ".item" {
             Items
         }
     }
