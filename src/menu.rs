@@ -1,6 +1,6 @@
 use crate::callback::Callback;
 use crate::item::{self, Item};
-use crate::style::{AppContainer, Layout, LayoutNodeKind, StyleRule, LAYOUT_KEY};
+use crate::style::{AppContainer, LayoutNode, StyleRule, LAYOUT_KEY};
 use crate::{CaseSensitivity, CliArgs};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
@@ -24,7 +24,7 @@ pub struct IcedMenu {
     cursor_position: usize,
     fuzzy_matcher: SkimMatcherV2,
     callback: Option<Callback>,
-    layout: Layout,
+    layout: LayoutNode,
 }
 
 impl IcedMenu {
@@ -117,27 +117,31 @@ impl IcedMenu {
         };
     }
 
-    fn view_from_layout(&self, node: &Layout) -> Vec<Element<Message>> {
-        let process_children = |n: &Layout| -> Vec<Element<Message>> {
-            n.children
+    fn view_from_layout(&self, node: &LayoutNode) -> Vec<Element<Message>> {
+        let process_children = |children: &Vec<LayoutNode>| -> Vec<Element<Message>> {
+            children
                 .iter()
-                .map(|c| self.view_from_layout(&c))
+                .map(|c| self.view_from_layout(c))
                 .flatten()
                 .collect()
         };
-        let process_child = |n: &Layout| -> Element<Message> {
-            assert_eq!(n.children.len(), 1);
-            self.view_from_layout(&n.children[0]).pop().unwrap()
+        let process_child = |children: &Vec<LayoutNode>| -> Element<Message> {
+            assert_eq!(children.len(), 1);
+            self.view_from_layout(&children[0]).pop().unwrap()
         };
 
-        match &node.kind {
-            LayoutNodeKind::Container => vec![widget::Container::new(process_child(node)).into()],
-            LayoutNodeKind::Row => vec![widget::Row::with_children(process_children(node)).into()],
-            LayoutNodeKind::Column => {
-                vec![widget::Column::with_children(process_children(node)).into()]
+        match node {
+            LayoutNode::Container(data) => {
+                vec![widget::Container::new(process_child(&data.children)).into()]
             }
-            LayoutNodeKind::Text(t) => vec![text(t).into()],
-            LayoutNodeKind::Query => {
+            LayoutNode::Row(data) => {
+                vec![widget::Row::with_children(process_children(&data.children)).into()]
+            }
+            LayoutNode::Column(data) => {
+                vec![widget::Column::with_children(process_children(&data.children)).into()]
+            }
+            LayoutNode::Text(data) => vec![text(&data.value).into()],
+            LayoutNode::Query(_) => {
                 vec![text_input(&self.cli_args.prompt, &self.query)
                     .size(20)
                     .on_input(Message::QueryChanged)
@@ -146,7 +150,7 @@ impl IcedMenu {
                     .id(text_input::Id::new(QUERY_INPUT_ID))
                     .into()]
             }
-            LayoutNodeKind::Items => self
+            LayoutNode::Items(_) => self
                 .visible_items
                 .iter()
                 .enumerate()
@@ -247,7 +251,7 @@ pub enum Message {
 pub struct Flags {
     pub cli_args: CliArgs,
     pub items: Vec<Item>,
-    pub layout: Layout,
+    pub layout: LayoutNode,
     pub styles: Vec<StyleRule>,
     pub callback: Option<Callback>,
 }
@@ -283,7 +287,7 @@ impl Flags {
         }
     }
 
-    fn get_layout(path: &Option<PathBuf>) -> miette::Result<Layout> {
+    fn get_layout(path: &Option<PathBuf>) -> miette::Result<LayoutNode> {
         let source_path = path.as_ref().unwrap();
         let source = std::fs::read_to_string(&source_path).expect("Could not read file");
         let config: kdl::KdlDocument = source.parse()?;
@@ -293,7 +297,7 @@ impl Flags {
         // let styles = config
         //     .get(STYLES)
         //     .expect(&format!("Could not find {} in your config", STYLES));
-        Layout::new(window).map_err(|e| {
+        LayoutNode::new(window).map_err(|e| {
             miette::Report::from(e)
                 .wrap_err("Could not read layout from config file")
                 .with_source_code(miette::NamedSource::new(

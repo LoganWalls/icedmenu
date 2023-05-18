@@ -7,16 +7,29 @@ pub const LAYOUT_KEY: &str = "Layout";
 pub const STYLES_KEY: &str = "Styles";
 
 #[derive(Debug)]
-pub enum LayoutNodeKind {
-    Container,
-    Row,
-    Column,
-    Query,
-    Items,
-    Text(String),
+pub struct LayoutNodeData {
+    pub children: Vec<LayoutNode>,
+    pub classes: Vec<String>,
 }
 
-impl LayoutNodeKind {
+#[derive(Debug)]
+pub struct LayoutTextNodeData {
+    pub children: Vec<LayoutNode>,
+    pub classes: Vec<String>,
+    pub value: String,
+}
+
+#[derive(Debug)]
+pub enum LayoutNode {
+    Container(LayoutNodeData),
+    Row(LayoutNodeData),
+    Column(LayoutNodeData),
+    Query(LayoutNodeData),
+    Items(LayoutNodeData),
+    Text(LayoutTextNodeData),
+}
+
+impl LayoutNode {
     fn possible_values() -> String {
         String::from(
             "Container, \
@@ -30,10 +43,109 @@ impl LayoutNodeKind {
 
     fn children_constraint(&self) -> Option<usize> {
         match self {
-            Self::Query | Self::Items | Self::Text(_) => Some(0),
-            Self::Container => Some(1),
+            Self::Query(_) | Self::Items(_) | Self::Text(_) => Some(0),
+            Self::Container(_) => Some(1),
             _ => None,
         }
+    }
+}
+
+impl LayoutNode {
+    pub fn new(node: &KdlNode) -> Result<Self, ConfigError> {
+        let children = node
+            .children()
+            .iter()
+            .map(|d| d.nodes())
+            .flatten()
+            .map(Self::new)
+            .collect::<Result<Vec<_>, _>>()?;
+        let classes: Vec<String> = node
+            .entries()
+            .iter()
+            .filter_map(|e| match e.name() {
+                Some(n) => {
+                    if n.value() == "class" {
+                        Some(e.value())
+                    } else {
+                        None
+                    }
+                }
+                None => None,
+            })
+            .filter_map(|v| v.as_string())
+            .map(|s| String::from(s))
+            .collect();
+
+        // Determine what kind of node this is.
+        let name = node.name();
+        match name.value() {
+            "Container" | "Layout" => Ok(Self::Container(LayoutNodeData { children, classes })),
+            "Row" => Ok(Self::Row(LayoutNodeData { children, classes })),
+            "Column" => Ok(Self::Column(LayoutNodeData { children, classes })),
+            "Text" => {
+                if let Some(v) = node.get("value") {
+                    if let Some(str_value) = v.value().as_string() {
+                        Ok(Self::Text(LayoutTextNodeData {
+                            children,
+                            classes,
+                            value: str_value.to_string(),
+                        }))
+                    } else {
+                        Err(ConfigError::InvalidArgument {
+                            arg_src: *v.span(),
+                            help: "The value for a Text node should be a string: `Text value=\"value\"`"
+                                .to_string(),
+                        })
+                    }
+                } else {
+                    Err(ConfigError::MissingArgument {
+                        node_src: *node.span(),
+                        help: "Text nodes require a value: `Text value=\"value\"`".to_string(),
+                    })
+                }
+            }
+            "Query" => Ok(Self::Query(LayoutNodeData { children, classes })),
+            "Items" => Ok(Self::Items(LayoutNodeData { children, classes })),
+            // "KeyText" => Ok(Self::KeyText),
+            _ => Err(ConfigError::InvalidLayoutNode {
+                node_src: *name.span(),
+                help: format!(
+                    "Try changing this node to one of: {}",
+                    Self::possible_values()
+                ),
+            }),
+        }
+
+        // // Validate the node's children
+        // let children = node.children();
+        // let constraint = kind.children_constraint();
+        // match (children, constraint) {
+        //     (Some(c), Some(n)) => {
+        //         let child_nodes = c.nodes();
+        //         let cn = child_nodes.len();
+        //         if cn != n {
+        //             Err(ConfigError::InvalidNumberOfChildren {
+        //                 parent_src: *node.span(),
+        //                 help: format!(
+        //                     "A {} node must have exactly {} {}, but yours has {}",
+        //                     name,
+        //                     n,
+        //                     if n == 1 { "child" } else { "children" },
+        //                     cn
+        //                 ),
+        //             })
+        //         } else {
+        //             Ok(kind)
+        //         }
+        //     }
+        //     _ => Ok(kind),
+        // }
+        //
+        // Ok(Self {
+        //     kind,
+        //     classes,
+        //     children,
+        // })
     }
 }
 
@@ -74,113 +186,6 @@ pub enum ConfigError {
         #[help]
         help: String,
     },
-}
-
-impl TryFrom<&kdl::KdlNode> for LayoutNodeKind {
-    type Error = ConfigError;
-    fn try_from(node: &kdl::KdlNode) -> Result<Self, Self::Error> {
-        // Determine what kind of node this is.
-        let name = node.name();
-        let kind = match name.value() {
-            "Container" | "Layout" => Ok(Self::Container),
-            "Row" => Ok(Self::Row),
-            "Column" => Ok(Self::Column),
-            "Text" => {
-                if let Some(v) = node.get("value") {
-                    if let Some(str_value) = v.value().as_string() {
-                        Ok(Self::Text(str_value.to_string()))
-                    } else {
-                        Err(ConfigError::InvalidArgument {
-                            arg_src: *v.span(),
-                            help: "The value for a Text node should be a string: `Text value=\"value\"`"
-                                .to_string(),
-                        })
-                    }
-                } else {
-                    Err(ConfigError::MissingArgument {
-                        node_src: *node.span(),
-                        help: "Text nodes require a value: `Text value=\"value\"`".to_string(),
-                    })
-                }
-            }
-            "Query" => Ok(Self::Query),
-            "Items" => Ok(Self::Items),
-            // "KeyText" => Ok(Self::KeyText),
-            _ => Err(ConfigError::InvalidLayoutNode {
-                node_src: *name.span(),
-                help: format!(
-                    "Try changing this node to one of: {}",
-                    Self::possible_values()
-                ),
-            }),
-        }?;
-
-        // Validate the node's children
-        let children = node.children();
-        let constraint = kind.children_constraint();
-        match (children, constraint) {
-            (Some(c), Some(n)) => {
-                let child_nodes = c.nodes();
-                let cn = child_nodes.len();
-                if cn != n {
-                    Err(ConfigError::InvalidNumberOfChildren {
-                        parent_src: *node.span(),
-                        help: format!(
-                            "A {} node must have exactly {} {}, but yours has {}",
-                            name,
-                            n,
-                            if n == 1 { "child" } else { "children" },
-                            cn
-                        ),
-                    })
-                } else {
-                    Ok(kind)
-                }
-            }
-            _ => Ok(kind),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Layout {
-    pub kind: LayoutNodeKind,
-    pub classes: Vec<String>,
-    pub children: Vec<Self>,
-}
-
-impl Layout {
-    pub fn new(node: &KdlNode) -> Result<Self, ConfigError> {
-        let kind: LayoutNodeKind = node.try_into()?;
-        let children = node
-            .children()
-            .iter()
-            .map(|d| d.nodes())
-            .flatten()
-            .map(Self::new)
-            .collect::<Result<Vec<_>, _>>()?;
-        let classes: Vec<String> = node
-            .entries()
-            .iter()
-            .filter_map(|e| match e.name() {
-                Some(n) => {
-                    if n.value() == "class" {
-                        Some(e.value())
-                    } else {
-                        None
-                    }
-                }
-                None => None,
-            })
-            .filter_map(|v| v.as_string())
-            .map(|s| String::from(s))
-            .collect();
-        Ok(Self {
-            kind,
-            classes,
-            children,
-        })
-    }
 }
 
 enum StyleAttribute {
