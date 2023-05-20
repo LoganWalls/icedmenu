@@ -1,11 +1,12 @@
+use iced::{widget, Element};
 use kdl::KdlNode;
 
 use super::LayoutNode;
+use crate::menu::Message;
 use crate::style::ConfigError;
 
 #[derive(Debug)]
 pub struct LayoutTextNodeData {
-    pub children: Vec<LayoutNode>,
     pub classes: Vec<String>,
     pub value: String,
 }
@@ -19,7 +20,6 @@ pub fn new(
     if let Some(v) = node.get("value") {
         if let Some(str_value) = v.value().as_string() {
             Ok(LayoutNode::Text(LayoutTextNodeData {
-                children,
                 classes,
                 value: str_value.to_string(),
             }))
@@ -36,4 +36,8 @@ pub fn new(
             help: "Text nodes require a value: `Text value=\"value\"`".to_string(),
         })
     }
+}
+
+pub fn view(data: &LayoutTextNodeData) -> Element<Message> {
+    widget::text(&data.value).into()
 }

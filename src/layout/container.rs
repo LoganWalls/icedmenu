@@ -1,6 +1,8 @@
+use iced::{widget, Element};
 use kdl::KdlNode;
 
 use super::{LayoutNode, LayoutNodeData};
+use crate::menu::{IcedMenu, Message};
 use crate::style::ConfigError;
 
 pub fn new(
@@ -10,4 +12,9 @@ pub fn new(
 ) -> Result<LayoutNode, ConfigError> {
     super::validate_children(node, children.len(), 1)?;
     Ok(LayoutNode::Container(LayoutNodeData { children, classes }))
+}
+
+pub fn view<'a>(data: &'a LayoutNodeData, menu: &'a IcedMenu) -> Element<'a, Message> {
+    let child = LayoutNode::view(&data.children[0], menu);
+    widget::Container::new(child).into()
 }

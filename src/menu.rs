@@ -6,23 +6,21 @@ use crate::{CaseSensitivity, CliArgs};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
-use iced::widget::{self, text, Column};
 use iced::widget::{container, text_input};
 use iced::{
-    executor, subscription, theme, window, Application, Command, Element, Event, Subscription,
-    Theme,
+    executor, subscription, window, Application, Command, Element, Event, Subscription, Theme,
 };
 use std::error::Error;
 use std::io::{self, Write};
 use std::path::PathBuf;
 
 pub struct IcedMenu {
-    cli_args: CliArgs,
-    items: Vec<Item>,
-    visible_items: Vec<usize>,
-    selected_items: Vec<usize>,
-    query: String,
-    cursor_position: usize,
+    pub cli_args: CliArgs,
+    pub items: Vec<Item>,
+    pub visible_items: Vec<usize>,
+    pub selected_items: Vec<usize>,
+    pub query: String,
+    pub cursor_position: usize,
     fuzzy_matcher: SkimMatcherV2,
     callback: Option<Callback>,
     layout: LayoutNode,
@@ -116,57 +114,6 @@ impl IcedMenu {
                 self.update_selection(index, new_change);
             }
         };
-    }
-
-    fn view_from_layout(&self, node: &LayoutNode) -> Vec<Element<Message>> {
-        let process_children = |children: &Vec<LayoutNode>| -> Vec<Element<Message>> {
-            children
-                .iter()
-                .map(|c| self.view_from_layout(c))
-                .flatten()
-                .collect()
-        };
-        let process_child = |children: &Vec<LayoutNode>| -> Element<Message> {
-            assert_eq!(children.len(), 1);
-            self.view_from_layout(&children[0]).pop().unwrap()
-        };
-
-        match node {
-            LayoutNode::Container(data) => {
-                vec![widget::Container::new(process_child(&data.children)).into()]
-            }
-            LayoutNode::Row(data) => {
-                vec![widget::Row::with_children(process_children(&data.children)).into()]
-            }
-            LayoutNode::Column(data) => {
-                vec![widget::Column::with_children(process_children(&data.children)).into()]
-            }
-            LayoutNode::Text(data) => vec![text(&data.value).into()],
-            LayoutNode::Query(_) => {
-                vec![text_input(&self.cli_args.prompt, &self.query)
-                    .size(20)
-                    .on_input(Message::QueryChanged)
-                    .on_submit(Message::Submitted)
-                    .padding(10)
-                    .id(text_input::Id::new(QUERY_INPUT_ID))
-                    .into()]
-            }
-            LayoutNode::Items(_) => self
-                .visible_items
-                .iter()
-                .enumerate()
-                .map(|(visible_index, item_index)| {
-                    let item = &self.items[*item_index];
-                    item.view()
-                        .style(if self.cursor_position == visible_index {
-                            theme::Button::Primary
-                        } else {
-                            theme::Button::Text
-                        })
-                        .into()
-                })
-                .collect(), // Maybe pass in items already in view mode and just return them here
-        }
     }
 
     fn index_under_cursor(&self) -> usize {
@@ -309,8 +256,6 @@ impl Flags {
     }
 }
 
-pub const QUERY_INPUT_ID: &str = "query_input";
-
 impl Application for IcedMenu {
     type Executor = executor::Default;
     type Message = Message;
@@ -318,7 +263,7 @@ impl Application for IcedMenu {
     type Theme = Theme;
 
     fn new(flags: Self::Flags) -> (Self, Command<Self::Message>) {
-        let query_input_id = text_input::Id::new(QUERY_INPUT_ID);
+        let query_input_id = text_input::Id::new(crate::layout::query::QUERY_INPUT_ID);
         let mut menu = Self {
             fuzzy_matcher: new_matcher(&flags.cli_args),
             query: flags.cli_args.query.clone(),
@@ -352,7 +297,7 @@ impl Application for IcedMenu {
     // }
 
     fn view(&self) -> Element<Message> {
-        let menu = Column::with_children(self.view_from_layout(&self.layout));
+        let menu = LayoutNode::view(&self.layout, &self);
         container(menu)
             .style(iced::theme::Container::Custom(AppContainer::new()))
             .into()

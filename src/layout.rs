@@ -1,5 +1,7 @@
+use iced::Element;
 use kdl::KdlNode;
 
+use crate::menu::{IcedMenu, Message};
 use crate::style::ConfigError;
 
 pub mod column;
@@ -68,6 +70,17 @@ impl LayoutNode {
                     Self::possible_values()
                 ),
             }),
+        }
+    }
+
+    pub fn view<'a>(node: &'a Self, menu: &'a IcedMenu) -> Element<'a, Message> {
+        match node {
+            Self::Container(data) => container::view(data, menu),
+            Self::Row(data) => row::view(data, menu),
+            Self::Column(data) => column::view(data, menu),
+            Self::Query(_) => query::view(menu),
+            Self::Items(_) => items::view(menu),
+            Self::Text(data) => text::view(data),
         }
     }
 }
