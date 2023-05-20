@@ -281,7 +281,7 @@ impl Flags {
                 Ok(item::parse_items(source)?)
             }
             (None, Some(c)) => Ok(c.call(query)),
-            (_, _) => {
+            (None, None) => {
                 let source = io::stdin();
                 Ok(item::parse_items(source)?)
             }
