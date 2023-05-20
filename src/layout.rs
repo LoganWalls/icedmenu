@@ -54,9 +54,7 @@ impl LayoutNode {
             .map(|s| String::from(s))
             .collect();
 
-        // Determine what kind of node this is.
-        let name = node.name();
-        match name.value() {
+        match node.name().value() {
             "Container" | "Layout" => container::new(node, children, classes),
             "Row" => row::new(node, children, classes),
             "Column" => column::new(node, children, classes),
@@ -64,7 +62,7 @@ impl LayoutNode {
             "Query" => query::new(node, children, classes),
             "Items" => items::new(node, children, classes),
             _ => Err(ConfigError::InvalidLayoutNode {
-                node_src: *name.span(),
+                node_src: *node.name().span(),
                 help: format!(
                     "Try changing this node to one of: {}",
                     Self::possible_values()
