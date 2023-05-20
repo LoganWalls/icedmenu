@@ -1,6 +1,7 @@
 use crate::callback::Callback;
 use crate::item::{self, Item};
-use crate::style::{AppContainer, LayoutNode, StyleRule, LAYOUT_KEY};
+use crate::layout::LayoutNode;
+use crate::style::{AppContainer, StyleRule, LAYOUT_KEY};
 use crate::{CaseSensitivity, CliArgs};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
