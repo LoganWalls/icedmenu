@@ -1,9 +1,9 @@
 mod app;
 mod callback;
 mod cli;
+mod config;
 mod item;
 mod layout;
-mod style;
 
 use crate::app::{Flags, IcedMenu};
 use clap::Parser;

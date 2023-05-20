@@ -3,7 +3,7 @@ use kdl::KdlNode;
 
 use super::{LayoutNode, LayoutNodeData};
 use crate::app::{IcedMenu, Message};
-use crate::style::ConfigError;
+use crate::config::ConfigError;
 
 pub fn new(
     node: &KdlNode,

@@ -3,7 +3,7 @@ use kdl::KdlNode;
 
 use super::LayoutNode;
 use crate::app::Message;
-use crate::style::ConfigError;
+use crate::config::ConfigError;
 
 #[derive(Debug)]
 pub struct LayoutTextNodeData {

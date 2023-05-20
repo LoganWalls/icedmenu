@@ -2,7 +2,7 @@ use crate::callback::Callback;
 use crate::cli::{CaseSensitivity, CliArgs};
 use crate::item::{self, Item};
 use crate::layout::LayoutNode;
-use crate::style::{AppContainer, StyleRule, LAYOUT_KEY};
+use crate::config::{AppContainer, StyleRule, LAYOUT_KEY};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};

@@ -2,7 +2,7 @@ use iced::Element;
 use kdl::KdlNode;
 
 use crate::app::{IcedMenu, Message};
-use crate::style::ConfigError;
+use crate::config::ConfigError;
 
 pub mod column;
 pub mod container;
