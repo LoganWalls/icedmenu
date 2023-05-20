@@ -1,7 +1,14 @@
 use kdl::KdlNode;
 
-use super::{LayoutNode, LayoutTextNodeData};
+use super::LayoutNode;
 use crate::style::ConfigError;
+
+#[derive(Debug)]
+pub struct LayoutTextNodeData {
+    pub children: Vec<LayoutNode>,
+    pub classes: Vec<String>,
+    pub value: String,
+}
 
 pub fn new(
     node: &KdlNode,

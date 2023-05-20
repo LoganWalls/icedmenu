@@ -16,20 +16,13 @@ pub struct LayoutNodeData {
 }
 
 #[derive(Debug)]
-pub struct LayoutTextNodeData {
-    pub children: Vec<LayoutNode>,
-    pub classes: Vec<String>,
-    pub value: String,
-}
-
-#[derive(Debug)]
 pub enum LayoutNode {
     Container(LayoutNodeData),
     Row(LayoutNodeData),
     Column(LayoutNodeData),
     Query(LayoutNodeData),
     Items(LayoutNodeData),
-    Text(LayoutTextNodeData),
+    Text(text::LayoutTextNodeData),
 }
 
 impl LayoutNode {
@@ -38,9 +31,9 @@ impl LayoutNode {
             "Container, \
             Row, \
             Column, \
-            Text, \
             Query, \
-            Items",
+            Items, \
+            Text",
         )
     }
 }
