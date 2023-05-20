@@ -57,17 +57,7 @@ impl LayoutNode {
         let classes: Vec<String> = node
             .entries()
             .iter()
-            .filter_map(|e| match e.name() {
-                Some(n) => {
-                    if n.value() == "class" {
-                        Some(e.value())
-                    } else {
-                        None
-                    }
-                }
-                None => None,
-            })
-            .filter_map(|v| v.as_string())
+            .filter_map(|e| e.name().map(|n| n.value()))
             .map(|s| String::from(s))
             .collect();
 
