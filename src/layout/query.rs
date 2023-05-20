@@ -2,7 +2,7 @@ use iced::{widget, Element};
 use kdl::KdlNode;
 
 use super::{LayoutNode, LayoutNodeData};
-use crate::menu::{IcedMenu, Message};
+use crate::app::{IcedMenu, Message};
 use crate::style::ConfigError;
 
 pub fn new(

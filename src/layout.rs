@@ -1,7 +1,7 @@
 use iced::Element;
 use kdl::KdlNode;
 
-use crate::menu::{IcedMenu, Message};
+use crate::app::{IcedMenu, Message};
 use crate::style::ConfigError;
 
 pub mod column;

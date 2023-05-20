@@ -1,4 +1,4 @@
-use crate::menu::Message;
+use crate::app::Message;
 use iced::widget::{button, text, Button, Row};
 use iced::{Color, Element, Length};
 use std::cmp::{Ord, Ordering};

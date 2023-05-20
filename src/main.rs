@@ -1,11 +1,11 @@
+mod app;
 mod callback;
 mod cli;
 mod item;
 mod layout;
-mod menu;
 mod style;
 
-use crate::menu::{Flags, IcedMenu};
+use crate::app::{Flags, IcedMenu};
 use clap::Parser;
 use iced::{window, Application, Settings};
 
