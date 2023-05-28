@@ -1,8 +1,8 @@
 use crate::callback::Callback;
 use crate::cli::{CaseSensitivity, CliArgs};
+use crate::config::{AppContainer, LAYOUT_KEY, STYLES_KEY};
 use crate::item::{self, Item};
 use crate::layout::LayoutNode;
-use crate::config::{AppContainer, StyleRule, LAYOUT_KEY};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
@@ -200,7 +200,7 @@ pub struct Flags {
     pub cli_args: CliArgs,
     pub items: Vec<Item>,
     pub layout: LayoutNode,
-    pub styles: Vec<StyleRule>,
+    // pub styles: Vec<StyleRule>,
     pub callback: Option<Callback>,
 }
 
@@ -213,7 +213,7 @@ impl Flags {
             layout: Self::get_layout(&cli_args.theme).unwrap(),
             callback,
             cli_args,
-            styles: Vec::new(),
+            // styles: Vec::new(),
         }
     }
 
@@ -242,9 +242,10 @@ impl Flags {
         let window = config
             .get(LAYOUT_KEY)
             .expect(&format!("Could not find {} in your config", LAYOUT_KEY));
-        // let styles = config
-        //     .get(STYLES)
-        //     .expect(&format!("Could not find {} in your config", STYLES));
+        let styles = config
+            .get(STYLES_KEY)
+            .expect(&format!("Could not find {} in your config", STYLES_KEY));
+
         LayoutNode::new(window).map_err(|e| {
             miette::Report::from(e)
                 .wrap_err("Could not read layout from config file")

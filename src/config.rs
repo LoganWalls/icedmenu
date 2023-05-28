@@ -42,32 +42,23 @@ pub enum ConfigError {
         #[help]
         help: String,
     },
+
+    #[error("Invalid attribute value")]
+    #[diagnostic()]
+    InvalidValue {
+        #[label("Style attribute")]
+        attr_src: SourceSpan,
+        #[label("Value")]
+        value_src: SourceSpan,
+        #[help]
+        help: String,
+    },
 }
 
-enum StyleAttribute {
-    Padding(u16),
-    Margin(u16),
-    Spacing(u16),
-    Color(iced::Color),
-    Width(iced::Length),
-    Height(iced::Length),
-    HorizontalAlignment(iced::alignment::Horizontal),
-    VerticalAlignment(iced::alignment::Vertical),
-    Font,
-}
-
-enum States {
-    Hovered,
-    Focused,
-    Active,
-    Pressed,
-    Disabled,
-}
-
-pub struct StyleRule {
-    classes: Vec<String>,
-    attributes: Vec<StyleAttribute>,
-}
+// pub struct StyleRule {
+//     classes: Vec<String>,
+//     attributes: Vec<StyleAttribute>,
+// }
 
 pub struct AppContainer {}
 
