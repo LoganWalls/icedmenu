@@ -248,7 +248,7 @@ impl Flags {
 
         LayoutNode::new(window).map_err(|e| {
             miette::Report::from(e)
-                .wrap_err("Could not read layout from config file")
+                .wrap_err("Could not read config file")
                 .with_source_code(miette::NamedSource::new(
                     &source_path.to_str().unwrap(),
                     source,
