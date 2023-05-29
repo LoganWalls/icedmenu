@@ -236,6 +236,7 @@ impl Flags {
     }
 
     fn get_layout(path: &Option<PathBuf>) -> miette::Result<LayoutNode> {
+        // TODO: replace unwrap with default style
         let source_path = path.as_ref().unwrap();
         let source = std::fs::read_to_string(&source_path).expect("Could not read file");
         let config: kdl::KdlDocument = source.parse()?;

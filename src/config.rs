@@ -45,6 +45,15 @@ pub enum ConfigError {
 
     #[error("Invalid attribute value")]
     #[diagnostic()]
+    InvalidStyleAttribute {
+        #[label("Style attribute")]
+        attr_src: SourceSpan,
+        #[help]
+        help: String,
+    },
+
+    #[error("Invalid attribute value")]
+    #[diagnostic()]
     InvalidValue {
         #[label("Style attribute")]
         attr_src: SourceSpan,
