@@ -4,6 +4,8 @@ use kdl::KdlNode;
 use crate::app::{IcedMenu, Message};
 use crate::config::ConfigError;
 
+use self::style::{GenericStyle, StyleLookup};
+
 pub mod column;
 pub mod container;
 pub mod items;
@@ -13,19 +15,19 @@ pub mod style;
 pub mod text;
 
 #[derive(Debug)]
-pub struct LayoutNodeData {
+pub struct NodeData {
     pub children: Vec<LayoutNode>,
-    pub classes: Vec<String>,
+    pub style: GenericStyle,
 }
 
 #[derive(Debug)]
 pub enum LayoutNode {
-    Container(LayoutNodeData),
-    Row(LayoutNodeData),
-    Column(LayoutNodeData),
-    Query(LayoutNodeData),
-    Items(LayoutNodeData),
-    Text(text::LayoutTextNodeData),
+    Container(NodeData),
+    Row(NodeData),
+    Column(NodeData),
+    Query(NodeData),
+    Items(NodeData),
+    Text(text::TextNodeData),
 }
 
 impl LayoutNode {
@@ -42,28 +44,30 @@ impl LayoutNode {
 }
 
 impl LayoutNode {
-    pub fn new(node: &KdlNode) -> Result<Self, ConfigError> {
+    pub fn new(node: &KdlNode, styles: &StyleLookup) -> Result<Self, ConfigError> {
         let children = node
             .children()
             .iter()
             .map(|d| d.nodes())
             .flatten()
-            .map(Self::new)
+            .map(|c| Self::new(c, styles))
             .collect::<Result<Vec<_>, _>>()?;
-        let classes: Vec<String> = node
+        let classes = node
             .entries()
             .iter()
             .filter_map(|e| e.name().map(|n| n.value()))
-            .map(|s| String::from(s))
             .collect();
 
-        match node.name().value() {
-            "Container" | "Layout" => container::new(node, children, classes),
-            "Row" => row::new(node, children, classes),
-            "Column" => column::new(node, children, classes),
-            "Text" => text::new(node, children, classes),
-            "Query" => query::new(node, children, classes),
-            "Items" => items::new(node, children, classes),
+        let node_type = node.name().value();
+        let style = styles.style_for(classes, node_type);
+
+        match node_type {
+            "Container" | "Layout" => container::new(node, children, style),
+            "Row" => row::new(node, children, style),
+            "Column" => column::new(node, children, style),
+            "Text" => text::new(node, children, style),
+            "Query" => query::new(node, children, style),
+            "Items" => items::new(node, children, style),
             _ => Err(ConfigError::InvalidLayoutNode {
                 node_src: *node.name().span(),
                 help: format!(

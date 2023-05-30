@@ -2,7 +2,7 @@ use crate::callback::Callback;
 use crate::cli::{CaseSensitivity, CliArgs};
 use crate::config::{AppContainer, LAYOUT_KEY, STYLES_KEY};
 use crate::item::{self, Item};
-use crate::layout::LayoutNode;
+use crate::layout::{style::parse_styles, LayoutNode};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
@@ -240,21 +240,23 @@ impl Flags {
         let source_path = path.as_ref().unwrap();
         let source = std::fs::read_to_string(&source_path).expect("Could not read file");
         let config: kdl::KdlDocument = source.parse()?;
-        let window = config
+        let layout_definition = config
             .get(LAYOUT_KEY)
             .expect(&format!("Could not find {} in your config", LAYOUT_KEY));
-        let styles = config
+        let styles_definition = config
             .get(STYLES_KEY)
             .expect(&format!("Could not find {} in your config", STYLES_KEY));
 
-        LayoutNode::new(window).map_err(|e| {
+        let wrap_error = |e| {
             miette::Report::from(e)
                 .wrap_err("Could not read config file")
                 .with_source_code(miette::NamedSource::new(
                     &source_path.to_str().unwrap(),
-                    source,
+                    source.to_owned(),
                 ))
-        })
+        };
+        let styles = parse_styles(&styles_definition).map_err(wrap_error)?;
+        LayoutNode::new(layout_definition, &styles).map_err(wrap_error)
     }
 }
 

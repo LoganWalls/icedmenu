@@ -1,19 +1,20 @@
 use iced::{widget, Element};
 use kdl::KdlNode;
 
-use super::{LayoutNode, LayoutNodeData};
+use super::style::GenericStyle;
+use super::{LayoutNode, NodeData};
 use crate::app::{IcedMenu, Message};
 use crate::config::ConfigError;
 
 pub fn new(
     node: &KdlNode,
     children: Vec<LayoutNode>,
-    classes: Vec<String>,
+    style: GenericStyle,
 ) -> Result<LayoutNode, ConfigError> {
-    Ok(LayoutNode::Column(LayoutNodeData { children, classes }))
+    Ok(LayoutNode::Column(NodeData { children, style }))
 }
 
-pub fn view<'a>(data: &'a LayoutNodeData, menu: &'a IcedMenu) -> Element<'a, Message> {
+pub fn view<'a>(data: &'a NodeData, menu: &'a IcedMenu) -> Element<'a, Message> {
     let children = data
         .children
         .iter()

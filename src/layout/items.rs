@@ -1,17 +1,18 @@
 use iced::{widget, Element};
 use kdl::KdlNode;
 
-use super::{LayoutNode, LayoutNodeData};
+use super::style::GenericStyle;
+use super::{LayoutNode, NodeData};
 use crate::app::{IcedMenu, Message};
 use crate::config::ConfigError;
 
 pub fn new(
     node: &KdlNode,
     children: Vec<LayoutNode>,
-    classes: Vec<String>,
+    style: GenericStyle,
 ) -> Result<LayoutNode, ConfigError> {
     super::validate_children(node, children.len(), 0)?;
-    Ok(LayoutNode::Items(LayoutNodeData { children, classes }))
+    Ok(LayoutNode::Items(NodeData { children, style }))
 }
 
 pub fn view<'a>(menu: &'a IcedMenu) -> Element<'a, Message> {
