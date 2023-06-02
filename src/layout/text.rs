@@ -12,32 +12,59 @@ pub struct TextNodeData {
     pub value: String,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct TextNodeStyle {
-    color: Option<StyleAttribute<iced::Color>>,
-    width: Option<StyleAttribute<iced::Length>>,
-    height: Option<StyleAttribute<iced::Length>>,
-    horizontal_alignment: Option<StyleAttribute<iced::alignment::Horizontal>>,
-    vertical_alignment: Option<StyleAttribute<iced::alignment::Vertical>>,
+    color: StyleAttribute<iced::Color>,
+    width: StyleAttribute<iced::Length>,
+    height: StyleAttribute<iced::Length>,
+    horizontal_alignment: StyleAttribute<iced::alignment::Horizontal>,
+    vertical_alignment: StyleAttribute<iced::alignment::Vertical>,
+}
+
+impl Default for TextNodeStyle {
+    fn default() -> Self {
+        Self {
+            color: StyleAttribute {
+                definition_span: None,
+                value: iced::Color::BLACK,
+            },
+            width: StyleAttribute {
+                definition_span: None,
+                value: iced::Length::Shrink,
+            },
+            height: StyleAttribute {
+                definition_span: None,
+                value: iced::Length::Shrink,
+            },
+            horizontal_alignment: StyleAttribute {
+                definition_span: None,
+                value: iced::alignment::Horizontal::Left,
+            },
+            vertical_alignment: StyleAttribute {
+                definition_span: None,
+                value: iced::alignment::Vertical::Center,
+            },
+        }
+    }
 }
 
 impl From<GenericStyle> for TextNodeStyle {
     fn from(value: GenericStyle) -> Self {
         let mut result = Self::default();
-        if value.color.is_some() {
-            result.color = value.color
+        if let Some(color) = value.color {
+            result.color = color
         }
-        if value.width.is_some() {
-            result.width = value.width
+        if let Some(width) = value.width {
+            result.width = width
         }
-        if value.height.is_some() {
-            result.height = value.height
+        if let Some(height) = value.height {
+            result.height = height
         }
-        if value.horizontal_alignment.is_some() {
-            result.horizontal_alignment = value.horizontal_alignment
+        if let Some(horizontal_alignment) = value.horizontal_alignment {
+            result.horizontal_alignment = horizontal_alignment
         }
-        if value.vertical_alignment.is_some() {
-            result.vertical_alignment = value.vertical_alignment
+        if let Some(vertical_alignment) = value.vertical_alignment {
+            result.vertical_alignment = vertical_alignment
         }
         result
     }
@@ -71,5 +98,12 @@ pub fn new(
 }
 
 pub fn view(data: &TextNodeData) -> Element<Message> {
-    widget::text(&data.value).into()
+    let style = &data.style;
+    widget::text(&data.value)
+        .style(style.color.value)
+        .width(style.width.value)
+        .height(style.height.value)
+        .horizontal_alignment(style.horizontal_alignment.value)
+        .vertical_alignment(style.vertical_alignment.value)
+        .into()
 }

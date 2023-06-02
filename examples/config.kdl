@@ -1,7 +1,7 @@
 Layout {
     Column {
         Query ".text"
-        Text value="hi!!!"
+        Text value="This is some text"
         Column ".item" {
             Items
         }
@@ -10,17 +10,19 @@ Layout {
 
 Styles {
     Layout {
-        width 400
+        width 400.0
         padding 10
     }
     Items {
         spacing 10
     }
     KeyText {
-        match-highlight-color "#8839ef"
+        color "#8839ef"
     }
     .text { 
-        font-size 20
         padding 10
+    }
+    Text {
+        color "blue"
     }
 }

@@ -18,8 +18,8 @@ pub enum States {
 
 #[derive(Debug, Clone, Copy)]
 pub struct StyleAttribute<T> {
-    definition_span: SourceSpan,
-    value: T,
+    pub definition_span: Option<SourceSpan>,
+    pub value: T,
 }
 
 #[derive(Debug, Default)]
@@ -39,7 +39,7 @@ impl GenericStyle {
         let mut result = Self::default();
         for child in doc.nodes().iter() {
             let value_def = child.get(0).expect("No value provided for style attribute");
-            let definition_span = *child.span();
+            let definition_span = Some(*child.span());
             let name = child.name().value();
 
             match name {
@@ -85,7 +85,7 @@ impl GenericStyle {
                 "color" => result.color = color_attr(child, value_def)?,
                 _ => {
                     return Err(ConfigError::InvalidStyleAttribute {
-                        attr_src: definition_span,
+                        attr_src: *child.span(),
                         help: format!(
                             "Style attributes can be one of: padding, margin, spacing, width, \
                             height, horizontal_alignment, vertical_alignment, color"
@@ -145,7 +145,7 @@ fn int_attr(
     })
     .map(|value| {
         Some(StyleAttribute {
-            definition_span: attr_span,
+            definition_span: Some(attr_span),
             value,
         })
     })
@@ -167,7 +167,7 @@ fn length_attr(
     }
     .map(|value| {
         Some(StyleAttribute {
-            definition_span: attr_span,
+            definition_span: Some(attr_span),
             value,
         })
     })
@@ -208,7 +208,7 @@ fn color_attr(
     if let Ok(c) = csscolorparser::parse(color_str) {
         let [r, g, b, a] = c.to_rgba8();
         Ok(Some(StyleAttribute {
-            definition_span: attr_span,
+            definition_span: Some(attr_span),
             value: iced::Color::from_rgba8(r, g, b, (a as f32) / 255.0),
         }))
     } else {

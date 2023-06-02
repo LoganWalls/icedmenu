@@ -547,6 +547,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "csscolorparser"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eb2a7d3066da2de787b7f032c736763eb7ae5d355f81a68bab2675a96008b0bf"
+dependencies = [
+ "phf",
+]
+
+[[package]]
 name = "csv"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1282,6 +1291,7 @@ name = "icedmenu"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "csscolorparser",
  "csv",
  "fuzzy-matcher",
  "iced",
