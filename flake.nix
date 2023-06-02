@@ -1,5 +1,5 @@
 {
-  description = "A cross-platform dmenu, iced";
+  description = "A cross-platform dmenu, iced.";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     fenix = {
@@ -29,15 +29,13 @@
         pkgs = import nixpkgs {inherit system;};
         inherit (pkgs) lib stdenv;
         fenixPkgs = fenix.packages.${system};
-        rustToolchain = fenixPkgs.default.toolchain;
+        rustToolchain = fenixPkgs.stable.toolchain;
         craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
-        buildDeps =
-          []
-          ++ lib.optionals stdenv.isDarwin (with pkgs.darwin.apple_sdk.frameworks; [
-            QuartzCore
-            AppKit
-            pkgs.libiconv
-          ]);
+        buildDeps = lib.optionals stdenv.isDarwin (with pkgs.darwin.apple_sdk.frameworks; [
+          QuartzCore
+          AppKit
+          pkgs.libiconv
+        ]);
 
         crate = craneLib.buildPackage {
           src = craneLib.cleanCargoSource ./.;
@@ -53,7 +51,8 @@
         };
         devShell = pkgs.mkShell {
           inputsFrom = builtins.attrValues self.checks;
-          nativeBuildInputs = buildDeps;
+          buildInputs = [fenixPkgs.rust-analyzer buildDeps];
+          nativeBuildInputs = [rustToolchain];
         };
       }
     );
