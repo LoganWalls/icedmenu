@@ -28,6 +28,8 @@ pub struct GenericStyle {
     pub margin: Option<StyleAttribute<u16>>,
     pub spacing: Option<StyleAttribute<u16>>,
     pub color: Option<StyleAttribute<iced::Color>>,
+    pub text_color: Option<StyleAttribute<iced::Color>>,
+    pub background: Option<StyleAttribute<iced::Color>>,
     pub width: Option<StyleAttribute<iced::Length>>,
     pub height: Option<StyleAttribute<iced::Length>>,
     pub horizontal_alignment: Option<StyleAttribute<iced::alignment::Horizontal>>,
@@ -83,6 +85,8 @@ impl GenericStyle {
                     })
                 }
                 "color" => result.color = color_attr(child, value_def)?,
+                "text_color" => result.text_color = color_attr(child, value_def)?,
+                "background" => result.background = color_attr(child, value_def)?,
                 _ => {
                     return Err(ConfigError::InvalidStyleAttribute {
                         attr_src: *child.span(),

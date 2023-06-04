@@ -1,4 +1,5 @@
 use iced::Element;
+use icedmenu::Reflective;
 use kdl::KdlNode;
 
 use crate::app::{IcedMenu, Message};
@@ -20,27 +21,14 @@ pub struct NodeData {
     pub style: GenericStyle,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Reflective)]
 pub enum LayoutNode {
-    Container(NodeData),
+    Container(container::ContainerNodeData),
     Row(NodeData),
     Column(NodeData),
     Query(NodeData),
     Items(NodeData),
     Text(text::TextNodeData),
-}
-
-impl LayoutNode {
-    fn possible_values() -> String {
-        String::from(
-            "Container, \
-            Row, \
-            Column, \
-            Query, \
-            Items, \
-            Text",
-        )
-    }
 }
 
 impl LayoutNode {
@@ -55,7 +43,10 @@ impl LayoutNode {
         let classes = node
             .entries()
             .iter()
-            .filter_map(|e| e.name().map(|n| n.value()))
+            .filter_map(|e| match e.name() {
+                Some(_) => None,
+                None => e.value().as_string(),
+            })
             .collect();
 
         let node_type = node.name().value();
@@ -72,7 +63,7 @@ impl LayoutNode {
                 node_src: *node.name().span(),
                 help: format!(
                     "Try changing this node to one of: {}",
-                    Self::possible_values()
+                    Self::reflect_attr_names().join(",")
                 ),
             }),
         }

@@ -1,4 +1,5 @@
 use iced::{widget, Element};
+use icedmenu::FromGenericStyle;
 use kdl::KdlNode;
 
 use super::style::{GenericStyle, StyleAttribute};
@@ -12,7 +13,7 @@ pub struct TextNodeData {
     pub value: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, FromGenericStyle)]
 pub struct TextNodeStyle {
     color: StyleAttribute<iced::Color>,
     width: StyleAttribute<iced::Length>,
@@ -45,28 +46,6 @@ impl Default for TextNodeStyle {
                 value: iced::alignment::Vertical::Center,
             },
         }
-    }
-}
-
-impl From<GenericStyle> for TextNodeStyle {
-    fn from(value: GenericStyle) -> Self {
-        let mut result = Self::default();
-        if let Some(color) = value.color {
-            result.color = color
-        }
-        if let Some(width) = value.width {
-            result.width = width
-        }
-        if let Some(height) = value.height {
-            result.height = height
-        }
-        if let Some(horizontal_alignment) = value.horizontal_alignment {
-            result.horizontal_alignment = horizontal_alignment
-        }
-        if let Some(vertical_alignment) = value.vertical_alignment {
-            result.vertical_alignment = vertical_alignment
-        }
-        result
     }
 }
 

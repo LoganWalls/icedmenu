@@ -200,7 +200,6 @@ pub struct Flags {
     pub cli_args: CliArgs,
     pub items: Vec<Item>,
     pub layout: LayoutNode,
-    // pub styles: Vec<StyleRule>,
     pub callback: Option<Callback>,
 }
 
@@ -213,7 +212,6 @@ impl Flags {
             layout: Self::get_layout(&cli_args.theme).unwrap(),
             callback,
             cli_args,
-            // styles: Vec::new(),
         }
     }
 

@@ -1,7 +1,9 @@
 Layout {
     Column {
         Query ".text"
-        Text value="This is some text"
+        Container ".red" {
+            Text value="This is some text"
+        }
         Column ".item" {
             Items
         }
@@ -19,10 +21,13 @@ Styles {
     KeyText {
         color "#8839ef"
     }
-    .text { 
-        padding 10
+    .red {
+        color "red"
+        background "red"
+        text_color "yellow"
+        height 200.0
     }
-    Text {
-        color "blue"
+    .text { 
+        padding 100
     }
 }

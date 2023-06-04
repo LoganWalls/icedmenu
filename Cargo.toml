@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+icedmenu-derive = {path = "icedmenu-derive"}
 clap = { version = "4.2.5", features = ["derive"] }
 csscolorparser = "0.6.2"
 csv = "1.2.1"
