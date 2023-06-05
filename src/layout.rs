@@ -54,8 +54,8 @@ impl LayoutNode {
 
         match node_type {
             "Container" | "Layout" => container::new(node, children, style),
-            "Row" => row::new(node, children, style),
-            "Column" => column::new(node, children, style),
+            "Row" => row::new(children, style),
+            "Column" => column::new(children, style),
             "Text" => text::new(node, children, style),
             "Query" => query::new(node, children, style),
             "Items" => items::new(node, children, style),
@@ -74,8 +74,8 @@ impl LayoutNode {
             Self::Container(data) => container::view(data, menu),
             Self::Row(data) => row::view(data, menu),
             Self::Column(data) => column::view(data, menu),
-            Self::Query(_) => query::view(menu),
-            Self::Items(_) => items::view(menu),
+            Self::Query(data) => query::view(data, menu),
+            Self::Items(data) => items::view(data, menu),
             Self::Text(data) => text::view(data),
         }
     }

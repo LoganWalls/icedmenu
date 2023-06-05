@@ -1,16 +1,12 @@
 use iced::{widget, Element};
-use kdl::KdlNode;
+use icedmenu::apply_styles;
 
 use super::style::GenericStyle;
 use super::{LayoutNode, NodeData};
 use crate::app::{IcedMenu, Message};
 use crate::config::ConfigError;
 
-pub fn new(
-    node: &KdlNode,
-    children: Vec<LayoutNode>,
-    style: GenericStyle,
-) -> Result<LayoutNode, ConfigError> {
+pub fn new(children: Vec<LayoutNode>, style: GenericStyle) -> Result<LayoutNode, ConfigError> {
     Ok(LayoutNode::Column(NodeData { children, style }))
 }
 
@@ -20,5 +16,16 @@ pub fn view<'a>(data: &'a NodeData, menu: &'a IcedMenu) -> Element<'a, Message> 
         .iter()
         .map(|c| LayoutNode::view(&c, menu))
         .collect();
-    widget::column(children).into()
+    let result = widget::column(children);
+    let style = &data.style;
+    apply_styles!(
+        result,
+        style;
+        width,
+        height,
+        spacing,
+        padding,
+        align_items;
+    )
+    .into()
 }

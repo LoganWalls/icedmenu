@@ -15,7 +15,8 @@ pub fn new(
     Ok(LayoutNode::Items(NodeData { children, style }))
 }
 
-pub fn view<'a>(menu: &'a IcedMenu) -> Element<'a, Message> {
+pub fn view<'a>(data: &NodeData, menu: &'a IcedMenu) -> Element<'a, Message> {
+    let style = &data.style;
     let items = menu
         .visible_items
         .iter()

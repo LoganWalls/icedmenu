@@ -1,4 +1,5 @@
 use iced::{widget, Element};
+use icedmenu::apply_styles;
 use kdl::KdlNode;
 
 use super::style::GenericStyle;
@@ -16,10 +17,18 @@ pub fn new(
 }
 
 pub const QUERY_INPUT_ID: &str = "query_input";
-pub fn view<'a>(menu: &IcedMenu) -> Element<'a, Message> {
-    widget::text_input(&menu.cli_args.prompt, &menu.query)
+pub fn view<'a>(data: &NodeData, menu: &IcedMenu) -> Element<'a, Message> {
+    let result = widget::text_input(&menu.cli_args.prompt, &menu.query)
         .on_input(Message::QueryChanged)
         .on_submit(Message::Submitted)
-        .id(widget::text_input::Id::new(QUERY_INPUT_ID))
-        .into()
+        .id(widget::text_input::Id::new(QUERY_INPUT_ID));
+    let style = &data.style;
+    apply_styles!(
+        result,
+        style;
+        width,
+        padding;
+        size: font_size,
+    )
+    .into()
 }

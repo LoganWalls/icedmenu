@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::iter::once;
 
+use icedmenu::{Reflective, UpdateFromOther};
 use kdl::{KdlDocument, KdlEntry, KdlNode, KdlValue};
-use miette::SourceSpan;
 
 use crate::config::ConfigError;
 
@@ -16,24 +16,24 @@ pub enum States {
     Disabled,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct StyleAttribute<T> {
-    pub definition_span: Option<SourceSpan>,
-    pub value: T,
-}
-
-#[derive(Debug, Default)]
+#[derive(Default, UpdateFromOther, Reflective, Debug)]
 pub struct GenericStyle {
-    pub padding: Option<StyleAttribute<u16>>,
-    pub margin: Option<StyleAttribute<u16>>,
-    pub spacing: Option<StyleAttribute<u16>>,
-    pub color: Option<StyleAttribute<iced::Color>>,
-    pub text_color: Option<StyleAttribute<iced::Color>>,
-    pub background: Option<StyleAttribute<iced::Color>>,
-    pub width: Option<StyleAttribute<iced::Length>>,
-    pub height: Option<StyleAttribute<iced::Length>>,
-    pub horizontal_alignment: Option<StyleAttribute<iced::alignment::Horizontal>>,
-    pub vertical_alignment: Option<StyleAttribute<iced::alignment::Vertical>>,
+    pub padding: Option<u16>,
+    pub margin: Option<u16>,
+    pub spacing: Option<u16>,
+    pub color: Option<iced::Color>,
+    pub width: Option<iced::Length>,
+    pub height: Option<iced::Length>,
+    pub max_width: Option<f32>,
+    pub max_height: Option<f32>,
+    pub horizontal_alignment: Option<iced::alignment::Horizontal>,
+    pub vertical_alignment: Option<iced::alignment::Vertical>,
+    pub align_items: Option<iced::alignment::Alignment>,
+    pub border_width: Option<f32>,
+    pub border_color: Option<iced::Color>,
+    pub font_size: Option<f32>,
+    pub text_color: Option<iced::Color>,
+    pub background: Option<iced::Color>,
 }
 
 impl GenericStyle {
@@ -41,58 +41,55 @@ impl GenericStyle {
         let mut result = Self::default();
         for child in doc.nodes().iter() {
             let value_def = child.get(0).expect("No value provided for style attribute");
-            let definition_span = Some(*child.span());
             let name = child.name().value();
 
             match name {
-                "padding" => result.padding = int_attr(child, value_def)?,
-                "margin" => result.margin = int_attr(child, value_def)?,
-                "spacing" => result.spacing = int_attr(child, value_def)?,
-                "width" => result.width = length_attr(child, value_def)?,
-                "height" => result.height = length_attr(child, value_def)?,
+                "padding" => result.padding = Some(int_attr(child, value_def)?),
+                "margin" => result.margin = Some(int_attr(child, value_def)?),
+                "spacing" => result.spacing = Some(int_attr(child, value_def)?),
+                "width" => result.width = Some(length_attr(child, value_def)?),
+                "height" => result.height = Some(length_attr(child, value_def)?),
                 "horizontal_alignment" => {
-                    result.horizontal_alignment = Some(StyleAttribute {
-                        definition_span,
-                        value: match string_value(child, value_def)? {
-                            "left" => Ok(iced::alignment::Horizontal::Left),
-                            "right" => Ok(iced::alignment::Horizontal::Right),
-                            "center" => Ok(iced::alignment::Horizontal::Center),
-                            _ => Err(ConfigError::InvalidValue {
-                                attr_src: *child.span(),
-                                value_src: *value_def.span(),
-                                help: String::from(
-                                    "`horizontal_alignment` can be one of: left, right, center",
-                                ),
-                            }),
-                        }?,
-                    })
+                    result.horizontal_alignment = Some(match string_value(child, value_def)? {
+                        "left" => Ok(iced::alignment::Horizontal::Left),
+                        "right" => Ok(iced::alignment::Horizontal::Right),
+                        "center" => Ok(iced::alignment::Horizontal::Center),
+                        _ => Err(ConfigError::InvalidValue {
+                            attr_src: *child.span(),
+                            value_src: *value_def.span(),
+                            help: String::from(
+                                "`horizontal_alignment` can be one of: left, right, center",
+                            ),
+                        }),
+                    }?)
                 }
                 "vertical_alignment" => {
-                    result.vertical_alignment = Some(StyleAttribute {
-                        definition_span,
-                        value: match string_value(child, value_def)? {
-                            "top" => Ok(iced::alignment::Vertical::Top),
-                            "bottom" => Ok(iced::alignment::Vertical::Bottom),
-                            "center" => Ok(iced::alignment::Vertical::Center),
-                            _ => Err(ConfigError::InvalidValue {
-                                attr_src: *child.span(),
-                                value_src: *value_def.span(),
-                                help: String::from(
-                                    "`vertical_alignment` can be one of: top, bottom, center",
-                                ),
-                            }),
-                        }?,
-                    })
+                    result.vertical_alignment = Some(match string_value(child, value_def)? {
+                        "top" => Ok(iced::alignment::Vertical::Top),
+                        "bottom" => Ok(iced::alignment::Vertical::Bottom),
+                        "center" => Ok(iced::alignment::Vertical::Center),
+                        _ => Err(ConfigError::InvalidValue {
+                            attr_src: *child.span(),
+                            value_src: *value_def.span(),
+                            help: String::from(
+                                "`vertical_alignment` can be one of: top, bottom, center",
+                            ),
+                        }),
+                    }?)
                 }
-                "color" => result.color = color_attr(child, value_def)?,
-                "text_color" => result.text_color = color_attr(child, value_def)?,
-                "background" => result.background = color_attr(child, value_def)?,
+                "color" => result.color = Some(color_attr(child, value_def)?),
+                "text_color" => result.text_color = Some(color_attr(child, value_def)?),
+                "background" => result.background = Some(color_attr(child, value_def)?),
                 _ => {
                     return Err(ConfigError::InvalidStyleAttribute {
                         attr_src: *child.span(),
                         help: format!(
-                            "Style attributes can be one of: padding, margin, spacing, width, \
-                            height, horizontal_alignment, vertical_alignment, color"
+                            "Style attributes can be one of:\n{}",
+                            Self::reflect_attr_names()
+                                .iter()
+                                .map(|n| format!("\t{n}"))
+                                .collect::<Vec<_>>()
+                                .join("\n")
                         ),
                     })
                 }
@@ -100,39 +97,12 @@ impl GenericStyle {
         }
         Ok(result)
     }
-
-    fn update_from(&mut self, style: &Self) {
-        if style.padding.is_some() {
-            self.padding = style.padding
-        }
-        if style.margin.is_some() {
-            self.margin = style.margin
-        }
-        if style.spacing.is_some() {
-            self.spacing = style.spacing
-        }
-        if style.color.is_some() {
-            self.color = style.color
-        }
-        if style.width.is_some() {
-            self.width = style.width
-        }
-        if style.height.is_some() {
-            self.height = style.height
-        }
-        if style.horizontal_alignment.is_some() {
-            self.horizontal_alignment = style.horizontal_alignment
-        }
-        if style.vertical_alignment.is_some() {
-            self.vertical_alignment = style.vertical_alignment
-        }
-    }
 }
 
 fn int_attr(
     attribute_definition: &KdlNode,
     value_definition: &KdlEntry,
-) -> Result<Option<StyleAttribute<u16>>, ConfigError> {
+) -> Result<u16, ConfigError> {
     let attr_span = *attribute_definition.name().span();
     if let KdlValue::Base10(v) = value_definition.value() {
         u16::try_from(*v).map_err(|_| ())
@@ -147,18 +117,12 @@ fn int_attr(
             attribute_definition.name().value()
         ),
     })
-    .map(|value| {
-        Some(StyleAttribute {
-            definition_span: Some(attr_span),
-            value,
-        })
-    })
 }
 
 fn length_attr(
     attribute_definition: &KdlNode,
     value_definition: &KdlEntry,
-) -> Result<Option<StyleAttribute<iced::Length>>, ConfigError> {
+) -> Result<iced::Length, ConfigError> {
     let attr_span = *attribute_definition.name().span();
     match value_definition.value() {
         KdlValue::String(v) | KdlValue::RawString(v) => match v.as_str() {
@@ -169,12 +133,6 @@ fn length_attr(
         KdlValue::Base10Float(v) => Ok(iced::Length::Fixed(*v as f32)),
         _ => Err(()),
     }
-    .map(|value| {
-        Some(StyleAttribute {
-            definition_span: Some(attr_span),
-            value,
-        })
-    })
     .map_err(|_| ConfigError::InvalidValue {
         attr_src: attr_span,
         value_src: *value_definition.span(),
@@ -206,15 +164,12 @@ fn string_value<'a>(
 fn color_attr(
     attribute_definition: &KdlNode,
     value_definition: &KdlEntry,
-) -> Result<Option<StyleAttribute<iced::Color>>, ConfigError> {
+) -> Result<iced::Color, ConfigError> {
     let attr_span = *attribute_definition.name().span();
     let color_str = string_value(attribute_definition, value_definition)?;
     if let Ok(c) = csscolorparser::parse(color_str) {
         let [r, g, b, a] = c.to_rgba8();
-        Ok(Some(StyleAttribute {
-            definition_span: Some(attr_span),
-            value: iced::Color::from_rgba8(r, g, b, (a as f32) / 255.0),
-        }))
+        Ok(iced::Color::from_rgba8(r, g, b, (a as f32) / 255.0))
     } else {
         let name = attribute_definition.name().value();
         Err(ConfigError::InvalidValue {
