@@ -1,6 +1,6 @@
 use crate::app::Message;
 use iced::widget::{button, text, Button, Row};
-use iced::{Color, Element, Length};
+use iced::{Color, Element};
 use std::cmp::{Ord, Ordering};
 use std::{error::Error, io};
 
@@ -52,10 +52,7 @@ impl Item {
             })
             .collect();
         content.append(&mut texts);
-        button(Row::with_children(content))
-            .width(Length::Shrink)
-            .padding(10)
-            .on_press(Message::MouseClicked(self.index))
+        button(Row::with_children(content)).on_press(Message::MouseClicked(self.index))
     }
 }
 

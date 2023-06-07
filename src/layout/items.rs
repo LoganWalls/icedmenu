@@ -1,4 +1,5 @@
 use iced::{widget, Element};
+use icedmenu::apply_styles;
 use kdl::KdlNode;
 
 use super::style::GenericStyle;
@@ -23,13 +24,12 @@ pub fn view<'a>(data: &NodeData, menu: &'a IcedMenu) -> Element<'a, Message> {
         .enumerate()
         .map(|(visible_index, item_index)| {
             let item = &menu.items[*item_index];
-            item.view()
-                .style(if menu.cursor_position == visible_index {
-                    iced::theme::Button::Primary
-                } else {
-                    iced::theme::Button::Text
-                })
-                .into()
+            let result = item.view().style(if menu.cursor_position == visible_index {
+                iced::theme::Button::Primary
+            } else {
+                iced::theme::Button::Text
+            });
+            apply_styles!(result, style; width, height, padding;).into()
         })
         .collect();
     widget::column(items).into()
