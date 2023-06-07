@@ -16,7 +16,7 @@ pub enum States {
     Disabled,
 }
 
-#[derive(Default, UpdateFromOther, Reflective, Debug)]
+#[derive(Default, Clone, UpdateFromOther, Reflective, Debug)]
 pub struct GenericStyle {
     pub padding: Option<u16>,
     pub margin: Option<u16>,
@@ -32,8 +32,8 @@ pub struct GenericStyle {
     pub border_width: Option<f32>,
     pub border_color: Option<iced::Color>,
     pub font_size: Option<f32>,
-    pub text_color: Option<iced::Color>,
-    pub background: Option<iced::Color>,
+    pub text_color: Option<Option<iced::Color>>,
+    pub background: Option<Option<iced::Background>>,
 }
 
 impl GenericStyle {
@@ -78,8 +78,11 @@ impl GenericStyle {
                     }?)
                 }
                 "color" => result.color = Some(color_attr(child, value_def)?),
-                "text_color" => result.text_color = Some(color_attr(child, value_def)?),
-                "background" => result.background = Some(color_attr(child, value_def)?),
+                "text_color" => result.text_color = Some(Some(color_attr(child, value_def)?)),
+                "background" => {
+                    result.background =
+                        Some(Some(iced::Background::Color(color_attr(child, value_def)?)));
+                }
                 _ => {
                     return Err(ConfigError::InvalidStyleAttribute {
                         attr_src: *child.span(),

@@ -1,6 +1,5 @@
-use iced::widget::container::Appearance;
 use iced::{widget, Element};
-use icedmenu::apply_styles;
+use icedmenu::{apply_styles, define_theme};
 use kdl::KdlNode;
 
 use super::LayoutNode;
@@ -13,6 +12,17 @@ pub struct ContainerNodeData {
     pub child: Box<LayoutNode>,
     pub style: GenericStyle,
 }
+
+define_theme!(
+    ContainerTheme,
+    iced::widget::container::Appearance,
+    iced::widget::container::StyleSheet,
+    iced::theme::Container;
+    background,
+    text_color,
+    border_width,
+    border_color;
+);
 
 pub fn new(
     node: &KdlNode,
@@ -30,18 +40,7 @@ pub fn view<'a>(data: &'a ContainerNodeData, menu: &'a IcedMenu) -> Element<'a, 
     let child = LayoutNode::view(&data.child, menu);
     let style = &data.style;
 
-    let style_fn = |_theme: &iced::Theme| -> Appearance {
-        Appearance {
-            background: style.background.map(iced::Background::Color),
-            text_color: style.text_color,
-            // border_width: style.border_width,
-            // border_color: style.border_color,
-            ..Default::default()
-        }
-    };
-
-    let result = widget::Container::new(child);
-    //FIXME: .style(style_fn);
+    let result = widget::Container::new(child).style(ContainerTheme::new(style.clone()));
     apply_styles!(
         result,
         style;

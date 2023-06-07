@@ -25,9 +25,8 @@ Styles {
         color "red"
         background "red"
         text_color "yellow"
-        height 200.0
     }
-    .text { 
-        padding 100
+    Query {
+        padding 10
     }
 }
