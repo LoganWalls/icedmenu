@@ -12,7 +12,7 @@ Layout {
 
 Styles {
     Layout {
-        width 400.0
+        width 400
         padding 10
     }
     Items {
@@ -25,6 +25,8 @@ Styles {
         color "red"
         background "red"
         text_color "yellow"
+        border_color "yellow"
+        border_width 1
     }
     Query {
         padding 10

@@ -21,17 +21,18 @@ pub struct GenericStyle {
     pub padding: Option<u16>,
     pub margin: Option<u16>,
     pub spacing: Option<u16>,
-    pub color: Option<iced::Color>,
-    pub width: Option<iced::Length>,
-    pub height: Option<iced::Length>,
     pub max_width: Option<f32>,
     pub max_height: Option<f32>,
+    pub border_radius: Option<f32>,
+    pub border_width: Option<f32>,
+    pub font_size: Option<f32>,
+    pub width: Option<iced::Length>,
+    pub height: Option<iced::Length>,
     pub horizontal_alignment: Option<iced::alignment::Horizontal>,
     pub vertical_alignment: Option<iced::alignment::Vertical>,
     pub align_items: Option<iced::alignment::Alignment>,
-    pub border_width: Option<f32>,
+    pub color: Option<iced::Color>,
     pub border_color: Option<iced::Color>,
-    pub font_size: Option<f32>,
     pub text_color: Option<Option<iced::Color>>,
     pub background: Option<Option<iced::Background>>,
 }
@@ -47,6 +48,11 @@ impl GenericStyle {
                 "padding" => result.padding = Some(int_attr(child, value_def)?),
                 "margin" => result.margin = Some(int_attr(child, value_def)?),
                 "spacing" => result.spacing = Some(int_attr(child, value_def)?),
+                "max_width" => result.max_width = Some(float_attr(child, value_def)?),
+                "max_height" => result.max_height = Some(float_attr(child, value_def)?),
+                "border_radius" => result.border_radius = Some(float_attr(child, value_def)?),
+                "border_width" => result.border_width = Some(float_attr(child, value_def)?),
+                "font_size" => result.font_size = Some(float_attr(child, value_def)?),
                 "width" => result.width = Some(length_attr(child, value_def)?),
                 "height" => result.height = Some(length_attr(child, value_def)?),
                 "horizontal_alignment" => {
@@ -78,6 +84,7 @@ impl GenericStyle {
                     }?)
                 }
                 "color" => result.color = Some(color_attr(child, value_def)?),
+                "border_color" => result.border_color = Some(color_attr(child, value_def)?),
                 "text_color" => result.text_color = Some(Some(color_attr(child, value_def)?)),
                 "background" => {
                     result.background =
@@ -106,17 +113,35 @@ fn int_attr(
     attribute_definition: &KdlNode,
     value_definition: &KdlEntry,
 ) -> Result<u16, ConfigError> {
-    let attr_span = *attribute_definition.name().span();
     if let KdlValue::Base10(v) = value_definition.value() {
         u16::try_from(*v).map_err(|_| ())
     } else {
         Err(())
     }
     .map_err(|_| ConfigError::InvalidValue {
-        attr_src: attr_span,
+        attr_src: *attribute_definition.name().span(),
         value_src: *value_definition.span(),
         help: format!(
             "The value of a `{}` attribute should be an integer",
+            attribute_definition.name().value()
+        ),
+    })
+}
+
+fn float_attr(
+    attribute_definition: &KdlNode,
+    value_definition: &KdlEntry,
+) -> Result<f32, ConfigError> {
+    match value_definition.value() {
+        KdlValue::Base10Float(v) => Ok(*v as f32),
+        KdlValue::Base10(v) => Ok(*v as f64 as f32),
+        _ => Err(()),
+    }
+    .map_err(|_| ConfigError::InvalidValue {
+        attr_src: *attribute_definition.name().span(),
+        value_src: *value_definition.span(),
+        help: format!(
+            "The value of a `{}` attribute should be a number",
             attribute_definition.name().value()
         ),
     })
@@ -134,6 +159,7 @@ fn length_attr(
             _ => Err(()),
         },
         KdlValue::Base10Float(v) => Ok(iced::Length::Fixed(*v as f32)),
+        KdlValue::Base10(v) => Ok(iced::Length::Fixed(*v as f64 as f32)),
         _ => Err(()),
     }
     .map_err(|_| ConfigError::InvalidValue {
