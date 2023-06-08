@@ -33,8 +33,9 @@ pub struct GenericStyle {
     pub align_items: Option<iced::alignment::Alignment>,
     pub color: Option<iced::Color>,
     pub border_color: Option<iced::Color>,
-    pub text_color: Option<Option<iced::Color>>,
-    pub background: Option<Option<iced::Background>>,
+    pub text_color: Option<iced::Color>,
+    pub icon_color: Option<iced::Color>,
+    pub background: Option<iced::Background>,
 }
 
 impl GenericStyle {
@@ -85,10 +86,11 @@ impl GenericStyle {
                 }
                 "color" => result.color = Some(color_attr(child, value_def)?),
                 "border_color" => result.border_color = Some(color_attr(child, value_def)?),
-                "text_color" => result.text_color = Some(Some(color_attr(child, value_def)?)),
+                "text_color" => result.text_color = Some(color_attr(child, value_def)?),
+                "icon_color" => result.icon_color = Some(color_attr(child, value_def)?),
                 "background" => {
                     result.background =
-                        Some(Some(iced::Background::Color(color_attr(child, value_def)?)));
+                        Some(iced::Background::Color(color_attr(child, value_def)?));
                 }
                 _ => {
                     return Err(ConfigError::InvalidStyleAttribute {
