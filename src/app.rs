@@ -61,7 +61,7 @@ impl IcedMenu {
             .iter()
             .filter(|item| self.query.is_empty() || item.score.is_some())
             .collect();
-        candidates.sort_by(|a, b| b.cmp(&a));
+        candidates.sort_by(|a, b| b.cmp(a));
         self.visible_items = candidates
             .iter()
             .take(self.cli_args.max_visible - self.selected_items.len())
@@ -236,7 +236,7 @@ impl Flags {
     fn get_layout(path: &Option<PathBuf>) -> miette::Result<LayoutNode> {
         // TODO: replace unwrap with default style
         let source_path = path.as_ref().unwrap();
-        let source = std::fs::read_to_string(&source_path).expect("Could not read file");
+        let source = std::fs::read_to_string(source_path).expect("Could not read file");
         let config: kdl::KdlDocument = source.parse()?;
         let layout_definition = config
             .get(LAYOUT_KEY)
@@ -249,11 +249,11 @@ impl Flags {
             miette::Report::from(e)
                 .wrap_err("Could not read config file")
                 .with_source_code(miette::NamedSource::new(
-                    &source_path.to_str().unwrap(),
+                    source_path.to_str().unwrap(),
                     source.to_owned(),
                 ))
         };
-        let styles = parse_styles(&styles_definition).map_err(wrap_error)?;
+        let styles = parse_styles(styles_definition).map_err(wrap_error)?;
         LayoutNode::new(layout_definition, &styles).map_err(wrap_error)
     }
 }
@@ -288,7 +288,7 @@ impl Application for IcedMenu {
     }
 
     fn title(&self) -> String {
-        return self.cli_args.prompt.clone();
+        self.cli_args.prompt.clone()
     }
 
     // fn theme(&self) -> Self::Theme {
@@ -299,7 +299,7 @@ impl Application for IcedMenu {
     // }
 
     fn view(&self) -> Element<Message> {
-        let menu = LayoutNode::view(&self.layout, &self);
+        let menu = LayoutNode::view(&self.layout, self);
         container(menu)
             .style(iced::theme::Container::Custom(AppContainer::new()))
             .into()

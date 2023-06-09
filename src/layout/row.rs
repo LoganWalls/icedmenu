@@ -14,7 +14,7 @@ pub fn view<'a>(data: &'a NodeData, menu: &'a IcedMenu) -> Element<'a, Message> 
     let children = data
         .children
         .iter()
-        .map(|c| LayoutNode::view(&c, menu))
+        .map(|c| LayoutNode::view(c, menu))
         .collect();
     let result = widget::row(children);
     let style = &data.style;

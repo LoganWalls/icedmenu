@@ -36,8 +36,7 @@ impl LayoutNode {
         let children = node
             .children()
             .iter()
-            .map(|d| d.nodes())
-            .flatten()
+            .flat_map(|d| d.nodes())
             .map(|c| Self::new(c, styles))
             .collect::<Result<Vec<_>, _>>()?;
         let classes = node
@@ -98,5 +97,5 @@ fn validate_children(
             ),
         });
     }
-    return Ok(());
+    Ok(())
 }

@@ -27,5 +27,5 @@ fn main() -> iced::Result {
     // Display app
     let mut settings = Settings::with_flags(flags);
     settings.window = window;
-    return IcedMenu::run(settings);
+    IcedMenu::run(settings)
 }

@@ -22,7 +22,7 @@ pub fn new(
     if let Some(v) = node.get("value") {
         if let Some(str_value) = v.value().as_string() {
             Ok(LayoutNode::Text(TextNodeData {
-                style: style.into(),
+                style,
                 value: str_value.to_string(),
             }))
         } else {
