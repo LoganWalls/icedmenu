@@ -19,11 +19,15 @@ pub fn new(
 
 struct ButtonTheme {
     style: GenericStyle,
+    default_theme: iced::theme::Button,
 }
 
 impl ButtonTheme {
     fn new(style: GenericStyle) -> iced::theme::Button {
-        iced::theme::Button::Custom(Box::from(Self { style }))
+        iced::theme::Button::Custom(Box::from(Self {
+            style,
+            default_theme: iced::theme::Button::default(),
+        }))
     }
 
     fn patch_appearance(&self, mut appear: Appearance) -> Appearance {
@@ -46,20 +50,20 @@ impl ButtonTheme {
 
 impl StyleSheet for ButtonTheme {
     type Style = iced::Theme;
-    fn active(&self, _style: &Self::Style) -> Appearance {
-        let result = iced::Theme::default().active(&iced::theme::Button::default());
+    fn active(&self, style: &Self::Style) -> Appearance {
+        let result = style.active(&self.default_theme);
         self.patch_appearance(result)
     }
-    fn hovered(&self, _style: &Self::Style) -> Appearance {
-        let result = iced::Theme::default().hovered(&iced::theme::Button::default());
+    fn hovered(&self, style: &Self::Style) -> Appearance {
+        let result = style.hovered(&self.default_theme);
         self.patch_appearance(result)
     }
-    fn pressed(&self, _style: &Self::Style) -> Appearance {
-        let result = iced::Theme::default().pressed(&iced::theme::Button::default());
+    fn pressed(&self, style: &Self::Style) -> Appearance {
+        let result = style.pressed(&self.default_theme);
         self.patch_appearance(result)
     }
-    fn disabled(&self, _style: &Self::Style) -> Appearance {
-        let result = iced::Theme::default().disabled(&iced::theme::Button::default());
+    fn disabled(&self, style: &Self::Style) -> Appearance {
+        let result = style.disabled(&self.default_theme);
         self.patch_appearance(result)
     }
 }

@@ -19,95 +19,72 @@ pub fn new(
 
 struct TextInputTheme {
     style: GenericStyle,
+    default_theme: iced::theme::TextInput,
 }
 
 impl TextInputTheme {
     fn new(style: GenericStyle) -> iced::theme::TextInput {
-        iced::theme::TextInput::Custom(Box::from(Self { style }))
+        iced::theme::TextInput::Custom(Box::from(Self {
+            style,
+            default_theme: iced::theme::TextInput::default(),
+        }))
+    }
+    fn patch_appearance(&self, mut appear: Appearance) -> Appearance {
+        if let Some(v) = self.style.background {
+            appear.background = v;
+        }
+        if let Some(v) = self.style.border_radius {
+            appear.border_radius = v;
+        }
+        if let Some(v) = self.style.border_width {
+            appear.border_width = v;
+        }
+        if let Some(v) = self.style.border_color {
+            appear.border_color = v;
+        }
+        if let Some(v) = self.style.icon_color {
+            appear.icon_color = v;
+        }
+        appear
     }
 }
 
-// TODO: figure out how to pull in defaults here
 impl StyleSheet for TextInputTheme {
     type Style = iced::Theme;
     fn active(&self, style: &Self::Style) -> Appearance {
-        let palette = style.extended_palette();
-        Appearance {
-            background: self
-                .style
-                .background
-                .unwrap_or(palette.background.base.color.into()),
-            border_radius: self.style.border_radius.unwrap_or(2.0),
-            border_width: self.style.border_width.unwrap_or(1.0),
-            border_color: self
-                .style
-                .border_color
-                .unwrap_or(palette.background.strong.color),
-            icon_color: self
-                .style
-                .icon_color
-                .unwrap_or(palette.background.weak.text),
-        }
+        let result = style.active(&self.default_theme);
+        self.patch_appearance(result)
     }
 
     fn focused(&self, style: &Self::Style) -> Appearance {
-        self.active(style)
+        let result = style.focused(&self.default_theme);
+        self.patch_appearance(result)
     }
 
     fn hovered(&self, style: &Self::Style) -> Appearance {
-        let palette = style.extended_palette();
-        Appearance {
-            background: self
-                .style
-                .background
-                .unwrap_or(palette.background.base.color.into()),
-            border_radius: self.style.border_radius.unwrap_or(2.0),
-            border_width: self.style.border_width.unwrap_or(1.0),
-            border_color: self
-                .style
-                .border_color
-                .unwrap_or(palette.background.base.color),
-            icon_color: self
-                .style
-                .icon_color
-                .unwrap_or(palette.background.weak.text),
-        }
+        let result = style.hovered(&self.default_theme);
+        self.patch_appearance(result)
     }
 
     fn disabled(&self, style: &Self::Style) -> Appearance {
-        let palette = style.extended_palette();
-        Appearance {
-            background: self
-                .style
-                .background
-                .unwrap_or(palette.background.weak.color.into()),
-            border_radius: self.style.border_radius.unwrap_or(2.0),
-            border_width: self.style.border_width.unwrap_or(1.0),
-            border_color: self
-                .style
-                .border_color
-                .unwrap_or(palette.background.strong.color),
-            icon_color: self
-                .style
-                .icon_color
-                .unwrap_or(palette.background.strong.text),
-        }
+        let result = style.disabled(&self.default_theme);
+        self.patch_appearance(result)
     }
 
     fn placeholder_color(&self, style: &Self::Style) -> Color {
-        style.extended_palette().background.strong.color
+        style.placeholder_color(&self.default_theme)
     }
 
     fn value_color(&self, style: &Self::Style) -> Color {
-        style.extended_palette().background.base.color
+        style.value_color(&self.default_theme)
     }
 
     fn selection_color(&self, style: &Self::Style) -> Color {
-        style.extended_palette().background.weak.color
+        style.selection_color(&self.default_theme)
     }
 
     fn disabled_color(&self, style: &Self::Style) -> Color {
-        self.placeholder_color(style)
+        style.disabled_color(&self.default_theme)
     }
 }
 
