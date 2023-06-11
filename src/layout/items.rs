@@ -4,17 +4,35 @@ use icedmenu::apply_styles;
 use kdl::KdlNode;
 
 use super::style::GenericStyle;
-use super::{LayoutNode, NodeData};
+use super::LayoutNode;
 use crate::app::{IcedMenu, Message};
 use crate::config::ConfigError;
+
+#[derive(Debug)]
+pub struct ItemsNodeData {
+    pub child: Box<LayoutNode>,
+    pub style: GenericStyle,
+}
 
 pub fn new(
     node: &KdlNode,
     children: Vec<LayoutNode>,
     style: GenericStyle,
 ) -> Result<LayoutNode, ConfigError> {
-    super::validate_children(node, children.len(), 0)?;
-    Ok(LayoutNode::Items(NodeData { children, style }))
+    super::validate_children(node, children.len(), 1)?;
+    match &children[0] {
+        LayoutNode::Container(_) | LayoutNode::Row(_) | LayoutNode::Column(_) => Ok(()),
+        _ => Err(ConfigError::InvalidChildren {
+            parent_src: *node.span(),
+            help: String::from(
+                "The child of an Items node should be one of: Container, Row, Column",
+            ),
+        }),
+    }?;
+    Ok(LayoutNode::Items(ItemsNodeData {
+        child: Box::new(children.into_iter().next().unwrap()),
+        style,
+    }))
 }
 
 struct ButtonTheme {
@@ -23,7 +41,7 @@ struct ButtonTheme {
 }
 
 impl ButtonTheme {
-    fn new(style: GenericStyle) -> iced::theme::Button {
+    fn create(style: GenericStyle) -> iced::theme::Button {
         iced::theme::Button::Custom(Box::from(Self {
             style,
             default_theme: iced::theme::Button::default(),
@@ -68,23 +86,23 @@ impl StyleSheet for ButtonTheme {
     }
 }
 
-pub fn view<'a>(data: &NodeData, menu: &'a IcedMenu) -> Element<'a, Message> {
+pub fn view<'a>(data: &'a ItemsNodeData, menu: &'a IcedMenu) -> Vec<Element<'a, Message>> {
     let style = &data.style;
-    let items = menu
-        .visible_items
+    menu.visible_items
         .iter()
         .enumerate()
-        .map(|(visible_index, item_index)| {
+        .map(|(_visible_index, item_index)| {
             let item = &menu.items[*item_index];
-            let result = item.view().style(if menu.cursor_position == visible_index {
-                iced::theme::Button::Primary
-            } else {
-                iced::theme::Button::Text
-            });
+            let children = LayoutNode::view(&data.child, menu, Some(item));
+            let result = iced::widget::button(children).on_press(Message::MouseClicked(item.index));
+            //     ;.style(if menu.cursor_position == visible_index {
+            //     iced::theme::Button::Primary
+            // } else {
+            //     iced::theme::Button::Text
+            // });
             apply_styles!(result, style; width, height, padding;)
-                .style(ButtonTheme::new(style.clone()))
+                .style(ButtonTheme::create(style.clone()))
                 .into()
         })
-        .collect();
-    widget::column(items).into()
+        .collect()
 }

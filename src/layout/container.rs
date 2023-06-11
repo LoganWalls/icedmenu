@@ -6,6 +6,7 @@ use kdl::KdlNode;
 use super::LayoutNode;
 use crate::app::{IcedMenu, Message};
 use crate::config::ConfigError;
+use crate::item::Item;
 use crate::layout::style::GenericStyle;
 
 #[derive(Debug)]
@@ -20,7 +21,7 @@ struct ContainerTheme {
 }
 
 impl ContainerTheme {
-    fn new(style: GenericStyle) -> iced::theme::Container {
+    fn create(style: GenericStyle) -> iced::theme::Container {
         iced::theme::Container::Custom(Box::from(Self {
             style,
             default_theme: iced::theme::Container::default(),
@@ -60,11 +61,15 @@ pub fn new(
     }))
 }
 
-pub fn view<'a>(data: &'a ContainerNodeData, menu: &'a IcedMenu) -> Element<'a, Message> {
-    let child = LayoutNode::view(&data.child, menu);
+pub fn view<'a>(
+    data: &'a ContainerNodeData,
+    menu: &'a IcedMenu,
+    item: Option<&'a Item>,
+) -> Element<'a, Message> {
+    let child = LayoutNode::view(&data.child, menu, item);
     let style = &data.style;
 
-    let result = widget::Container::new(child).style(ContainerTheme::new(style.clone()));
+    let result = widget::Container::new(child).style(ContainerTheme::create(style.clone()));
     apply_styles!(
         result,
         style;

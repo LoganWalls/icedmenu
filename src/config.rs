@@ -16,9 +16,9 @@ pub enum ConfigError {
         help: String,
     },
 
-    #[error("Unsupported number of children")]
+    #[error("Unsupported children")]
     #[diagnostic()]
-    InvalidNumberOfChildren {
+    InvalidChildren {
         #[label("Node with unsupported children")]
         parent_src: SourceSpan,
         #[help]

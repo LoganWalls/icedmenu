@@ -1,11 +1,12 @@
 Layout {
     Column {
         Query ".text"
-        Container ".red" {
-            Text value="This is some text"
-        }
-        Column ".item" {
-            Items
+        Row ".item" {
+            Items {
+                Row {
+                    ItemKey
+                }
+            }
         }
     }
 }
@@ -17,6 +18,8 @@ Styles {
     }
     Items {
         spacing 10
+        border_color "black"
+        border_width 1
     }
     KeyText {
         color "#8839ef"

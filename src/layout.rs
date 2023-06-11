@@ -4,11 +4,15 @@ use kdl::KdlNode;
 
 use crate::app::{IcedMenu, Message};
 use crate::config::ConfigError;
+use crate::item::Item;
 
+use self::items::ItemsNodeData;
 use self::style::{GenericStyle, StyleLookup};
+use self::text::TextNodeData;
 
 pub mod column;
 pub mod container;
+pub mod item_key;
 pub mod items;
 pub mod query;
 pub mod row;
@@ -27,17 +31,30 @@ pub enum LayoutNode {
     Row(NodeData),
     Column(NodeData),
     Query(NodeData),
-    Items(NodeData),
-    Text(text::TextNodeData),
+    Items(ItemsNodeData),
+    ItemKey(NodeData),
+    Text(TextNodeData),
 }
 
 impl LayoutNode {
     pub fn new(node: &KdlNode, styles: &StyleLookup) -> Result<Self, ConfigError> {
+        let node_type = node.name().value();
         let children = node
             .children()
             .iter()
             .flat_map(|d| d.nodes())
-            .map(|c| Self::new(c, styles))
+            .map(|child| {
+                let c = Self::new(child, styles)?;
+                match (node_type, &c) {
+                    ("Row" | "Column", Self::Items(_)) => Ok(c),
+                    (_, Self::Items(_)) => Err(
+                        ConfigError::InvalidChildren { 
+                            parent_src: *node.span(), 
+                            help: format!("{node_type} cannot be the parent of Items. Parent must be Row or Column") 
+                        }),
+                    _ => Ok(c),
+                }
+            })
             .collect::<Result<Vec<_>, _>>()?;
         let classes = node
             .entries()
@@ -48,7 +65,6 @@ impl LayoutNode {
             })
             .collect();
 
-        let node_type = node.name().value();
         let style = styles.style_for(classes, node_type);
 
         match node_type {
@@ -58,6 +74,7 @@ impl LayoutNode {
             "Text" => text::new(node, children, style),
             "Query" => query::new(node, children, style),
             "Items" => items::new(node, children, style),
+            "ItemKey" => item_key::new(node, children, style),
             _ => Err(ConfigError::InvalidLayoutNode {
                 node_src: *node.name().span(),
                 help: format!(
@@ -68,14 +85,23 @@ impl LayoutNode {
         }
     }
 
-    pub fn view<'a>(node: &'a Self, menu: &'a IcedMenu) -> Element<'a, Message> {
+    pub fn view<'a>(
+        node: &'a Self,
+        menu: &'a IcedMenu,
+        item: Option<&'a Item>,
+    ) -> Element<'a, Message> {
         match node {
-            Self::Container(data) => container::view(data, menu),
-            Self::Row(data) => row::view(data, menu),
-            Self::Column(data) => column::view(data, menu),
+            Self::Container(data) => container::view(data, menu, item),
+            Self::Row(data) => row::view(data, menu, item),
+            Self::Column(data) => column::view(data, menu, item),
             Self::Query(data) => query::view(data, menu),
-            Self::Items(data) => items::view(data, menu),
             Self::Text(data) => text::view(data),
+            Self::ItemKey(data) => item_key::view(data, item),
+            Self::Items(_) => {
+                // Layouts are validated so that Items must be the child of a Row or Column
+                // (which call item::view() directly) so this branch should never be reached
+                unreachable!()
+            }
         }
     }
 }
@@ -86,7 +112,7 @@ fn validate_children(
     constraint: usize,
 ) -> Result<(), ConfigError> {
     if constraint != n_children {
-        return Err(ConfigError::InvalidNumberOfChildren {
+        return Err(ConfigError::InvalidChildren {
             parent_src: *node.span(),
             help: format!(
                 "A {} node must have exactly {} {}, but yours has {}",

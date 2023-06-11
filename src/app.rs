@@ -299,7 +299,7 @@ impl Application for IcedMenu {
     // }
 
     fn view(&self) -> Element<Message> {
-        let menu = LayoutNode::view(&self.layout, self);
+        let menu = LayoutNode::view(&self.layout, self, None);
         container(menu)
             .style(iced::theme::Container::Custom(AppContainer::new()))
             .into()

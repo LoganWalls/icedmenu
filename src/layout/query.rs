@@ -23,7 +23,7 @@ struct TextInputTheme {
 }
 
 impl TextInputTheme {
-    fn new(style: GenericStyle) -> iced::theme::TextInput {
+    fn create(style: GenericStyle) -> iced::theme::TextInput {
         iced::theme::TextInput::Custom(Box::from(Self {
             style,
             default_theme: iced::theme::TextInput::default(),
@@ -102,6 +102,6 @@ pub fn view<'a>(data: &NodeData, menu: &IcedMenu) -> Element<'a, Message> {
         padding;
         size: font_size,
     )
-    .style(TextInputTheme::new(style.clone()))
+    .style(TextInputTheme::create(style.clone()))
     .into()
 }
