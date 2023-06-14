@@ -1,5 +1,5 @@
 use iced::widget::button::{Appearance, StyleSheet};
-use iced::{widget, Element};
+use iced::Element;
 use icedmenu::apply_styles;
 use kdl::KdlNode;
 

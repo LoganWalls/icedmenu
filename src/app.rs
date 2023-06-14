@@ -240,10 +240,10 @@ impl Flags {
         let config: kdl::KdlDocument = source.parse()?;
         let layout_definition = config
             .get(LAYOUT_KEY)
-            .expect(&format!("Could not find {} in your config", LAYOUT_KEY));
+            .unwrap_or_else(|| panic!("Could not find {} in your config", LAYOUT_KEY));
         let styles_definition = config
             .get(STYLES_KEY)
-            .expect(&format!("Could not find {} in your config", STYLES_KEY));
+            .unwrap_or_else(|| panic!("Could not find {} in your config", STYLES_KEY));
 
         let wrap_error = |e| {
             miette::Report::from(e)

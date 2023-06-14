@@ -1,17 +1,14 @@
-use crate::app::Message;
-use iced::widget::{button, text, Button, Row};
-use iced::{Color, Element};
 use std::cmp::{Ord, Ordering};
 use std::{error::Error, io};
 
-#[derive(Debug, Eq, PartialEq, PartialOrd, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, serde::Deserialize, serde::Serialize)]
 pub struct ItemData {
     pub key: String,
     #[serde(default)]
     pub value: Option<String>,
 }
 
-#[derive(Debug, Eq, PartialEq, PartialOrd)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Item {
     pub index: usize,
     pub data: ItemData,
@@ -30,30 +27,6 @@ impl Item {
             selected: false,
         }
     }
-    pub fn view(&self) -> Button<Message> {
-        let mut content = Vec::new();
-        // Selected indicator
-        if self.selected {
-            content.push(text("> ").into());
-        }
-        // Item text with match highlights
-        let mut texts: Vec<Element<Message>> = self
-            .data
-            .key
-            .char_indices()
-            .map(|(i, c)| {
-                let mut t = text(c).size(20);
-                if let Some(indices) = &self.match_indices {
-                    if indices.contains(&i) {
-                        t = t.style(Color::from_rgb(0.5, 0.5, 1.0))
-                    }
-                }
-                t.into()
-            })
-            .collect();
-        content.append(&mut texts);
-        button(Row::with_children(content)).on_press(Message::MouseClicked(self.index))
-    }
 }
 
 impl Ord for Item {
@@ -67,6 +40,12 @@ impl Ord for Item {
             // Fallback to the order of the items in the input
             (_, _) => self.index.cmp(&other.index).reverse(),
         }
+    }
+}
+
+impl PartialOrd for Item {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 

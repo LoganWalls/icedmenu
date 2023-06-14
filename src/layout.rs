@@ -8,7 +8,6 @@ use crate::item::Item;
 
 use self::items::ItemsNodeData;
 use self::style::{GenericStyle, StyleLookup};
-use self::text::TextNodeData;
 
 pub mod column;
 pub mod container;
@@ -33,7 +32,7 @@ pub enum LayoutNode {
     Query(NodeData),
     Items(ItemsNodeData),
     ItemKey(NodeData),
-    Text(TextNodeData),
+    Text(Box<text::TextNodeData>),
 }
 
 impl LayoutNode {

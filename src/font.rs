@@ -66,8 +66,6 @@ fn similar_system_fonts(pattern: &str, n: usize) -> Vec<String> {
                 .map(|score| (name.to_owned(), score))
         })
         .collect();
-    dbg!(system_fonts::query_all());
-    dbg!(pattern);
     result.sort_by_key(|(_, score)| *score);
     result
         .iter()

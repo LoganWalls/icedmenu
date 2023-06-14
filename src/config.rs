@@ -82,14 +82,10 @@ pub enum ConfigError {
     },
 }
 
-// pub struct StyleRule {
-//     classes: Vec<String>,
-//     attributes: Vec<StyleAttribute>,
-// }
-
-pub struct AppContainer {}
+pub struct AppContainer;
 
 impl AppContainer {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new() -> Box<dyn container::StyleSheet<Style = iced::theme::Theme>> {
         Box::new(Self {}) as Box<dyn container::StyleSheet<Style = iced::theme::Theme>>
     }

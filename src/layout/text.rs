@@ -21,10 +21,10 @@ pub fn new(
     super::validate_children(node, children.len(), 0)?;
     if let Some(v) = node.get("value") {
         if let Some(str_value) = v.value().as_string() {
-            Ok(LayoutNode::Text(TextNodeData {
+            Ok(LayoutNode::Text(Box::new(TextNodeData {
                 style,
                 value: str_value.to_string(),
-            }))
+            })))
         } else {
             Err(ConfigError::InvalidArgument {
                 arg_src: *v.span(),
