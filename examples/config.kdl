@@ -1,7 +1,7 @@
 Layout {
     Column {
         Query
-        Row ".item" {
+        Column ".item" {
             Items {
                 Row {
                     ItemKey

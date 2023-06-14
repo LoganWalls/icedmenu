@@ -2,55 +2,58 @@ use font_loader::system_fonts;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use kdl::{KdlEntry, KdlNode};
-use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 
 use iced::Font;
 
 use crate::config::ConfigError;
+use crate::layout::style::string_value;
 
-static FONT_LOOKUP: OnceCell<HashMap<&'static str, Font>> = OnceCell::new();
+pub struct FontLoader {
+    lookup: HashMap<&'static str, Font>,
+}
 
-pub fn initialize_fonts(font_names: Vec<(&KdlNode, &KdlEntry)>) -> Result<(), ConfigError> {
-    let mut lookup: HashMap<&'static str, Font> = HashMap::new();
-    for (node, font_name) in font_names {
-        let name = font_name
-            .value()
-            .as_string()
-            .ok_or_else(|| ConfigError::InvalidValue {
-                attr_src: *node.span(),
-                value_src: *font_name.span(),
-                help: "Font values should be strings".to_string(),
-            })?
-            .to_owned();
+impl FontLoader {
+    pub fn new() -> Self {
+        FontLoader {
+            lookup: HashMap::new(),
+        }
+    }
+
+    pub fn get(&self, font_name: &str) -> Font {
+        *self.lookup.get(font_name).unwrap_or_else(|| {
+            panic!("Attempted to access font: {font_name}, which has not been loaded")
+        })
+    }
+
+    pub fn ensure_font<'a>(
+        &mut self,
+        node: &KdlNode,
+        font_name: &'a KdlEntry,
+    ) -> Result<&'a str, ConfigError> {
+        let name = string_value(node, font_name)?;
+        if self.lookup.contains_key(name) {
+            return Ok(name);
+        }
         let font_props = system_fonts::FontPropertyBuilder::new()
-            .family(&name)
+            .family(name)
             .build();
         let (bytes, _) =
             system_fonts::get(&font_props).ok_or_else(|| ConfigError::FontNotFound {
                 value_src: *font_name.span(),
                 help: format!(
             "Could not find this font on your system.\nSimilar fonts that you have installed: {}",
-            similar_system_fonts(&name, 5).join(", "),
+            similar_system_fonts(name, 5).join(", "),
         ),
             })?;
-        let static_name = Box::leak(Box::new(name));
+        let static_name = Box::leak(Box::new((*name).to_owned()));
         let font = Font::External {
             name: static_name,
             bytes: Box::leak(bytes.into_boxed_slice()),
         };
-        lookup.insert(static_name, font);
+        self.lookup.insert(static_name, font);
+        Ok(static_name)
     }
-    FONT_LOOKUP.set(lookup).unwrap();
-    Ok(())
-}
-
-pub fn get_font(font_name: &str) -> Font {
-    *FONT_LOOKUP
-        .get()
-        .expect("Font looked up before FONT_LOOKUP initialized")
-        .get(font_name)
-        .expect("Font not in lookup")
 }
 
 fn similar_system_fonts(pattern: &str, n: usize) -> Vec<String> {

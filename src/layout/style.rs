@@ -6,6 +6,7 @@ use icedmenu::{Reflective, UpdateFromOther};
 use kdl::{KdlDocument, KdlEntry, KdlNode, KdlValue};
 
 use crate::config::ConfigError;
+use crate::font::FontLoader;
 
 pub enum States {
     Default,
@@ -40,7 +41,7 @@ pub struct GenericStyle {
 }
 
 impl GenericStyle {
-    fn new(doc: &KdlDocument) -> Result<Self, ConfigError> {
+    fn new(doc: &KdlDocument, font_loader: &mut FontLoader) -> Result<Self, ConfigError> {
         let mut result = Self::default();
         for child in doc.nodes().iter() {
             let value_def = child.get(0).expect("No value provided for style attribute");
@@ -94,10 +95,8 @@ impl GenericStyle {
                         Some(iced::Background::Color(color_attr(child, value_def)?));
                 }
                 "font" => {
-                    result.font = Some(crate::font::get_font(
-                        value_def.value().as_string().unwrap(), // NOTE: this should never fail because these
-                                                                // values are validated when initializing fonts
-                    ))
+                    let font_name = font_loader.ensure_font(child, value_def)?;
+                    result.font = Some(font_loader.get(font_name));
                 }
                 _ => {
                     return Err(ConfigError::InvalidStyleAttribute {
@@ -181,7 +180,7 @@ fn length_attr(
     })
 }
 
-fn string_value<'a>(
+pub fn string_value<'a>(
     attribute_definition: &KdlNode,
     value_definition: &'a KdlEntry,
 ) -> Result<&'a str, ConfigError> {
@@ -244,36 +243,33 @@ impl StyleLookup {
 
 pub fn parse_styles(node: &KdlNode) -> Result<StyleLookup, ConfigError> {
     let mut styles: HashMap<String, GenericStyle> = HashMap::new();
+    let mut fonts = FontLoader::new();
     let style_definitions = node.children().expect("No styles defined").nodes();
 
-    let mut font_attrs = Vec::new();
-    let mut parsed_attrs = Vec::new();
     for style_definition in style_definitions.iter() {
         let target = style_definition.name().value();
         let style_attrs = style_definition.children().ok_or(ConfigError::EmptyStyle {
             attr_src: *style_definition.span(),
             help: String::from("Try deleting this style or adding an attribute to it"),
         })?;
-        font_attrs.extend(
-            style_attrs
-                .nodes()
-                .iter()
-                .filter(|n| n.name().value() == "font")
-                .map(|n| (n, n.get(0).expect("No value provided for font attribute"))),
-        );
-        parsed_attrs.push((target, style_attrs));
-    }
 
-    crate::font::initialize_fonts(font_attrs)?;
-
-    for (target, style_attrs) in parsed_attrs {
-        let style = GenericStyle::new(style_attrs)?;
+        let style = GenericStyle::new(style_attrs, &mut fonts)?;
         match styles.get_mut(target) {
             Some(existing_style) => existing_style.update_from(&style),
             None => {
                 styles.insert(target.to_string(), style);
             }
         }
+
+        // font_attrs.extend(
+        //     style_attrs
+        //         .nodes()
+        //         .iter()
+        //         .filter(|n| n.name().value() == "font")
+        //         .map(|n| (n, n.get(0).expect("No value provided for font attribute"))),
+        // );
+        // parsed_attrs.push((target, style_attrs));
     }
+
     Ok(StyleLookup { styles })
 }

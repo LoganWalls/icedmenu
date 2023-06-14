@@ -1312,7 +1312,6 @@ dependencies = [
  "icedmenu-derive",
  "kdl",
  "miette",
- "once_cell",
  "serde",
  "thiserror",
  "wgpu 0.16.1",
