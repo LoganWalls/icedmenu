@@ -46,6 +46,7 @@ pub fn view(data: &TextNodeData) -> Element<Message> {
     apply_styles!(
         result,
         style;
+        font,
         width,
         height,
         horizontal_alignment,

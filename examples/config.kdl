@@ -1,6 +1,6 @@
 Layout {
     Column {
-        Query ".text"
+        Query
         Row ".item" {
             Items {
                 Row {
@@ -21,6 +21,9 @@ Styles {
         border_color "black"
         border_width 1
     }
+    ItemKey {
+        font "Arial"
+    }
     KeyText {
         color "#8839ef"
     }
@@ -33,5 +36,6 @@ Styles {
     }
     Query {
         padding 10
+        font "Comic Sans MS"
     }
 }

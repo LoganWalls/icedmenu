@@ -2,6 +2,7 @@ mod app;
 mod callback;
 mod cli;
 mod config;
+mod font;
 mod item;
 mod layout;
 

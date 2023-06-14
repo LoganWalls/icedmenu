@@ -786,6 +786,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
+name = "font-loader"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c49d6b4c11dca1a1dd931a34a9f397e2da91abe3de4110505f3530a80e560b52"
+dependencies = [
+ "core-foundation",
+ "core-text",
+ "libc",
+ "servo-fontconfig",
+ "winapi",
+]
+
+[[package]]
 name = "foreign-types"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1293,11 +1306,13 @@ dependencies = [
  "clap",
  "csscolorparser",
  "csv",
+ "font-loader",
  "fuzzy-matcher",
  "iced",
  "icedmenu-derive",
  "kdl",
  "miette",
+ "once_cell",
  "serde",
  "thiserror",
  "wgpu 0.16.1",

@@ -36,6 +36,7 @@ pub struct GenericStyle {
     pub text_color: Option<iced::Color>,
     pub icon_color: Option<iced::Color>,
     pub background: Option<iced::Background>,
+    pub font: Option<iced::Font>,
 }
 
 impl GenericStyle {
@@ -91,6 +92,12 @@ impl GenericStyle {
                 "background" => {
                     result.background =
                         Some(iced::Background::Color(color_attr(child, value_def)?));
+                }
+                "font" => {
+                    result.font = Some(crate::font::get_font(
+                        value_def.value().as_string().unwrap(), // NOTE: this should never fail because these
+                                                                // values are validated when initializing fonts
+                    ))
                 }
                 _ => {
                     return Err(ConfigError::InvalidStyleAttribute {
@@ -235,19 +242,31 @@ impl StyleLookup {
     }
 }
 
-// TODO: read all of the styles from config into hashmap, then as each layout node is created,
-// find all of the styles that apply to it and combine them together to form the node's style.
-// Then, add a `style` function to each layout node type's module and call it from that node
-// type's `view` function.
 pub fn parse_styles(node: &KdlNode) -> Result<StyleLookup, ConfigError> {
     let mut styles: HashMap<String, GenericStyle> = HashMap::new();
     let style_definitions = node.children().expect("No styles defined").nodes();
+
+    let mut font_attrs = Vec::new();
+    let mut parsed_attrs = Vec::new();
     for style_definition in style_definitions.iter() {
         let target = style_definition.name().value();
         let style_attrs = style_definition.children().ok_or(ConfigError::EmptyStyle {
             attr_src: *style_definition.span(),
             help: String::from("Try deleting this style or adding an attribute to it"),
         })?;
+        font_attrs.extend(
+            style_attrs
+                .nodes()
+                .iter()
+                .filter(|n| n.name().value() == "font")
+                .map(|n| (n, n.get(0).expect("No value provided for font attribute"))),
+        );
+        parsed_attrs.push((target, style_attrs));
+    }
+
+    crate::font::initialize_fonts(font_attrs)?;
+
+    for (target, style_attrs) in parsed_attrs {
         let style = GenericStyle::new(style_attrs)?;
         match styles.get_mut(target) {
             Some(existing_style) => existing_style.update_from(&style),

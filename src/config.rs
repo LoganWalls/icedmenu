@@ -71,6 +71,15 @@ pub enum ConfigError {
         #[help]
         help: String,
     },
+
+    #[error("Font not found")]
+    #[diagnostic()]
+    FontNotFound {
+        #[label("Missing font")]
+        value_src: SourceSpan,
+        #[help]
+        help: String,
+    },
 }
 
 // pub struct StyleRule {

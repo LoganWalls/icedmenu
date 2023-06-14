@@ -98,6 +98,7 @@ pub fn view<'a>(data: &NodeData, menu: &IcedMenu) -> Element<'a, Message> {
     apply_styles!(
         result,
         style;
+        font,
         width,
         padding;
         size: font_size,
