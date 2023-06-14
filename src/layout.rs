@@ -46,7 +46,7 @@ impl LayoutNode {
             .map(|child| {
                 let c = Self::new(child, styles)?;
                 match (node_type, &c) {
-                    ("Row" | "Column", Self::Items(_)) => Ok(c),
+                    ("Row" | "Column" | "Col", Self::Items(_)) => Ok(c),
                     (_, Self::Items(_)) => Err(
                         ConfigError::InvalidChildren { 
                             parent_src: *node.span(), 
@@ -70,7 +70,7 @@ impl LayoutNode {
         match node_type {
             "Container" | "Layout" => container::new(node, children, style),
             "Row" => row::new(children, style),
-            "Column" => column::new(children, style),
+            "Column" | "Col" => column::new(children, style),
             "Text" => text::new(node, children, style),
             "Query" => query::new(node, children, style),
             "Items" => items::new(node, children, style),
