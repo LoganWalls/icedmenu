@@ -99,13 +99,7 @@ impl container::StyleSheet for AppContainer {
     type Style = iced::theme::Theme;
 
     fn appearance(&self, _style: &Self::Style) -> container::Appearance {
-        container::Appearance {
-            // border_radius: 10.0,
-            // border_color: Color::BLACK,
-            // border_width: 2.0,
-            // background: Color::WHITE.into(),
-            ..Default::default()
-        }
+        _style.appearance(&iced::theme::Container::default())
     }
 }
 
