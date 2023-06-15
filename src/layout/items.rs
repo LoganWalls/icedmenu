@@ -44,7 +44,7 @@ impl ButtonTheme {
     fn create(style: GenericStyle) -> iced::theme::Button {
         iced::theme::Button::Custom(Box::from(Self {
             style,
-            default_theme: iced::theme::Button::default(),
+            default_theme: iced::theme::Button::Text,
         }))
     }
 
