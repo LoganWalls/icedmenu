@@ -261,15 +261,6 @@ pub fn parse_styles(node: &KdlNode) -> Result<StyleLookup, ConfigError> {
                 styles.insert(target.to_string(), style);
             }
         }
-
-        // font_attrs.extend(
-        //     style_attrs
-        //         .nodes()
-        //         .iter()
-        //         .filter(|n| n.name().value() == "font")
-        //         .map(|n| (n, n.get(0).expect("No value provided for font attribute"))),
-        // );
-        // parsed_attrs.push((target, style_attrs));
     }
 
     Ok(StyleLookup { styles })
