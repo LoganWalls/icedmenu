@@ -1,5 +1,5 @@
 use iced::widget::{text, Row};
-use iced::{Color, Element};
+use iced::Element;
 use icedmenu::apply_styles;
 use kdl::KdlNode;
 
@@ -45,10 +45,11 @@ pub fn view<'a>(data: &NodeData, item: Option<&'a Item>) -> Element<'a, Message>
                 size: font_size,
             );
             // Sets the color of the text that matches the query string
-            if let Some(indices) = &item.match_indices {
-                if indices.contains(&i) {
-                    t = t.style(Color::from_rgb(0.5, 0.5, 1.0))
+            match (&item.match_indices, style.match_text_color) {
+                (Some(indices), Some(color)) if indices.contains(&i) => {
+                    t = t.style(color);
                 }
+                _ => (),
             }
             t.into()
         })

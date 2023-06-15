@@ -16,23 +16,9 @@ Styles {
         width 400
         padding 10
     }
-    Items {
-        spacing 10
-        border_color "black"
-        border_width 1
-    }
     ItemKey {
         font "Arial"
-    }
-    KeyText {
-        color "#8839ef"
-    }
-    .red {
-        color "red"
-        background "red"
-        text_color "yellow"
-        border_color "yellow"
-        border_width 1
+        match_text_color "red"
     }
     Query {
         padding 10

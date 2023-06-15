@@ -35,6 +35,7 @@ pub struct GenericStyle {
     pub color: Option<iced::Color>,
     pub border_color: Option<iced::Color>,
     pub text_color: Option<iced::Color>,
+    pub match_text_color: Option<iced::Color>,
     pub icon_color: Option<iced::Color>,
     pub background: Option<iced::Background>,
     pub font: Option<iced::Font>,
@@ -89,6 +90,7 @@ impl GenericStyle {
                 "color" => result.color = Some(color_attr(child, value_def)?),
                 "border_color" => result.border_color = Some(color_attr(child, value_def)?),
                 "text_color" => result.text_color = Some(color_attr(child, value_def)?),
+                "match_text_color" => result.match_text_color = Some(color_attr(child, value_def)?),
                 "icon_color" => result.icon_color = Some(color_attr(child, value_def)?),
                 "background" => {
                     result.background =
@@ -252,7 +254,6 @@ pub fn parse_styles(node: &KdlNode) -> Result<StyleLookup, ConfigError> {
             attr_src: *style_definition.span(),
             help: String::from("Try deleting this style or adding an attribute to it"),
         })?;
-
         let style = GenericStyle::new(style_attrs, &mut fonts)?;
         match styles.get_mut(target) {
             Some(existing_style) => existing_style.update_from(&style),
