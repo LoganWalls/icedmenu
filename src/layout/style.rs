@@ -8,13 +8,27 @@ use kdl::{KdlDocument, KdlEntry, KdlNode, KdlValue};
 use crate::config::ConfigError;
 use crate::font::FontLoader;
 
-pub enum States {
+#[derive(Clone, Copy)]
+pub enum State {
     Default,
     Hovered,
     Focused,
     Active,
     Pressed,
     Disabled,
+}
+
+impl State {
+    fn style_suffix(&self) -> &str {
+        match self {
+            Self::Default => "",
+            Self::Hovered => ":hovered",
+            Self::Focused => ":focused",
+            Self::Active => ":active",
+            Self::Pressed => ":pressed",
+            Self::Disabled => ":disabled",
+        }
+    }
 }
 
 #[derive(Default, Clone, UpdateFromOther, Reflective, Debug)]
@@ -232,13 +246,13 @@ pub struct StyleLookup {
     styles: HashMap<String, GenericStyle>,
 }
 impl StyleLookup {
-    pub fn style_for(&self, classes: Vec<&str>, node_type: &str) -> GenericStyle {
+    pub fn style_for(&self, style_names: &[&str], node_type: &str, state: State) -> GenericStyle {
         let mut style = GenericStyle::default();
-        for c in once(node_type).chain(classes) {
-            if let Some(s) = self.styles.get(c) {
-                style.update_from(s);
-            }
-        }
+        once(&node_type)
+            .chain(style_names)
+            .map(|s| format!("{}{}", s, state.style_suffix()))
+            .filter_map(|style_name| self.styles.get(&style_name))
+            .for_each(|s| style.update_from(s));
         style
     }
 }
