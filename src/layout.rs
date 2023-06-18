@@ -85,7 +85,21 @@ impl LayoutNode {
                 ));
                 query::new(node, children, style, focused_style, hovered_style)
             }
-            "Items" => items::new(node, children, style),
+            "Items" => {
+                let mut hovered_style = style.clone();
+                hovered_style.update_from(&style_lookup.style_for(
+                    &style_names,
+                    node_type,
+                    State::Hovered,
+                ));
+                let mut pressed_style = style.clone();
+                pressed_style.update_from(&style_lookup.style_for(
+                    &style_names,
+                    node_type,
+                    State::Pressed,
+                ));
+                items::new(node, children, style, hovered_style, pressed_style)
+            }
             "ItemKey" => item_key::new(node, children, style),
             _ => Err(ConfigError::InvalidLayoutNode {
                 node_src: *node.name().span(),

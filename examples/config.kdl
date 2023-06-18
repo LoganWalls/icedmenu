@@ -16,6 +16,14 @@ Styles {
         width 400
         padding 10
     }
+    Items {
+        padding 2
+        width "shrink"
+    }
+    Items:hovered {
+        border_width 1
+        border_color "pink"
+    }
     ItemKey {
         font "Arial"
         match_text_color "red"
