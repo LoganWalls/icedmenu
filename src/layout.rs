@@ -71,13 +71,13 @@ impl LayoutNode {
             "Column" | "Col" => column::new(children, style),
             "Text" => text::new(node, children, style),
             "Query" => {
-                let mut focused_style = style.clone();
+                let mut focused_style = style;
                 focused_style.update_from(&style_lookup.style_for(
                     &style_names,
                     node_type,
                     State::Focused,
                 ));
-                let mut hovered_style = style.clone();
+                let mut hovered_style = style;
                 hovered_style.update_from(&style_lookup.style_for(
                     &style_names,
                     node_type,
@@ -86,28 +86,47 @@ impl LayoutNode {
                 query::new(node, children, style, focused_style, hovered_style)
             }
             "Items" => {
-                let mut hovered_style = style.clone();
+                let mut hovered_style = style;
                 hovered_style.update_from(&style_lookup.style_for(
                     &style_names,
                     node_type,
                     State::Hovered,
                 ));
-                let mut pressed_style = style.clone();
+                let mut pressed_style = style;
                 pressed_style.update_from(&style_lookup.style_for(
                     &style_names,
                     node_type,
                     State::Pressed,
                 ));
-                items::new(node, children, style, hovered_style, pressed_style)
+                let mut selected_style = style;
+                selected_style.update_from(&style_lookup.style_for(
+                    &style_names,
+                    node_type,
+                    State::Selected,
+                ));
+                items::new(
+                    node,
+                    children,
+                    style,
+                    hovered_style,
+                    pressed_style,
+                    selected_style,
+                )
             }
             "ItemKey" => {
-                let mut hovered_style = style.clone();
+                let mut hovered_style = style;
                 hovered_style.update_from(&style_lookup.style_for(
                     &style_names,
                     node_type,
                     State::Hovered,
                 ));
-                item_key::new(node, children, style, hovered_style)
+                let mut selected_style = style;
+                selected_style.update_from(&style_lookup.style_for(
+                    &style_names,
+                    node_type,
+                    State::Selected,
+                ));
+                item_key::new(node, children, style, hovered_style, selected_style)
             }
             _ => Err(ConfigError::InvalidLayoutNode {
                 node_src: *node.name().span(),

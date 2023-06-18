@@ -69,7 +69,7 @@ pub fn view<'a>(
     let child = LayoutNode::view(&data.child, menu, item);
     let style = &data.style;
 
-    let result = widget::Container::new(child).style(ContainerTheme::create(style.clone()));
+    let result = widget::Container::new(child).style(ContainerTheme::create(*style));
     apply_styles!(
         result,
         style;

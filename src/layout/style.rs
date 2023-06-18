@@ -13,9 +13,8 @@ pub enum State {
     Default,
     Hovered,
     Focused,
-    Active,
     Pressed,
-    Disabled,
+    Selected,
 }
 
 impl State {
@@ -24,14 +23,13 @@ impl State {
             Self::Default => "",
             Self::Hovered => ":hovered",
             Self::Focused => ":focused",
-            Self::Active => ":active",
             Self::Pressed => ":pressed",
-            Self::Disabled => ":disabled",
+            Self::Selected => ":selected",
         }
     }
 }
 
-#[derive(Default, Clone, UpdateFromOther, Reflective, Debug)]
+#[derive(Default, Clone, Copy, UpdateFromOther, Reflective, Debug)]
 pub struct GenericStyle {
     pub padding: Option<u16>,
     pub margin: Option<u16>,

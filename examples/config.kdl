@@ -1,7 +1,7 @@
 Layout {
     Column {
         Query
-        Col ".item" {
+        Col ".item-container" {
             Items {
                 Row {
                     ItemKey
@@ -15,33 +15,50 @@ Styles {
     Layout {
         width 400
         padding 10
+        background "mediumpurple"
     }
-    Items {
-        padding 2
-        width "shrink"
+    ".item-container" {
+        padding 6
+        spacing 8
     }
-    Items:hovered {
-        border_width 1
-        border_color "pink"
-    }
-    ItemKey {
-        font "Arial"
-        match_text_color "lightgreen"
-    }
-    ItemKey:hovered {
-        match_text_color "pink"
-    }
+
     Query {
         padding 10
         font "Comic Sans MS"
     }
     Query:focused {
-        border_color "pink"
-        border_width 4
+        border_color "khaki"
+        border_width 2
     }
     Query:hovered {
-        border_color "lightgreen"
-        border_width 5
+        border_color "gold"
+        border_width 2
     }
 
+    Items {
+        padding 6
+        width "shrink"
+        text_color "white"
+        border_radius 6
+    }
+    ItemKey {
+        font "Comic Sans MS"
+        match_text_color "gold"
+    }
+    Items:selected {
+        border_color "gold"
+        border_width 2
+    }
+    Items:hovered {
+        border_radius 6
+        background "khaki"
+        text_color "mediumpurple"
+    }
+    ItemKey:hovered {
+        text_color "mediumpurple"
+        match_text_color "goldenrod"
+    }
+    ItemKey:selected {
+        text_color "red"
+    }
 }

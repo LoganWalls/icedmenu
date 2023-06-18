@@ -1,6 +1,6 @@
 use iced::widget::{text, Row};
 use iced::Element;
-use icedmenu::apply_styles;
+use icedmenu::{apply_styles, UpdateFromOther};
 use kdl::KdlNode;
 
 use super::style::GenericStyle;
@@ -14,6 +14,7 @@ pub struct ItemKeyNodeData {
     pub children: Vec<LayoutNode>,
     pub style: GenericStyle,
     pub hovered_style: GenericStyle,
+    pub selected_style: GenericStyle,
 }
 
 pub fn new(
@@ -21,12 +22,14 @@ pub fn new(
     children: Vec<LayoutNode>,
     style: GenericStyle,
     hovered_style: GenericStyle,
+    selected_style: GenericStyle,
 ) -> Result<LayoutNode, ConfigError> {
     super::validate_children(node, children.len(), 0)?;
     Ok(LayoutNode::ItemKey(ItemKeyNodeData {
         children,
         style,
         hovered_style,
+        selected_style,
     }))
 }
 
@@ -37,16 +40,21 @@ pub fn view<'a>(
 ) -> Element<'a, Message> {
     let item = item.expect("no Item provided to ItemKey");
     // Use hovered style if this item is under the cursor
-    let style = if item.index == menu.visible_items[menu.cursor_position] {
-        &data.hovered_style
-    } else {
-        &data.style
+    let style = match (
+        menu.visible_items[menu.cursor_position] == item.index,
+        item.selected,
+    ) {
+        (true, true) => {
+            let mut s: GenericStyle = data.selected_style;
+            s.update_from(&data.hovered_style);
+            s
+        }
+        (true, false) => data.hovered_style,
+        (false, true) => data.selected_style,
+        (false, false) => data.style,
     };
     let mut content = Vec::new();
-    // Selected indicator
-    if item.selected {
-        content.push(text("> ").into());
-    }
+
     // Item text with match highlights
     let mut texts: Vec<Element<Message>> = item
         .data
@@ -60,7 +68,8 @@ pub fn view<'a>(
                 width,
                 height,
                 horizontal_alignment,
-                vertical_alignment;
+                vertical_alignment,
+                font;
                 style: color,
                 size: font_size,
             );

@@ -1,6 +1,6 @@
 use iced::widget::button::{Appearance, StyleSheet};
 use iced::Element;
-use icedmenu::apply_styles;
+use icedmenu::{apply_styles, UpdateFromOther};
 use kdl::KdlNode;
 
 use super::style::GenericStyle;
@@ -14,6 +14,7 @@ pub struct ItemsNodeData {
     pub style: GenericStyle,
     pub hovered_style: GenericStyle,
     pub pressed_style: GenericStyle,
+    pub selected_style: GenericStyle,
 }
 
 pub fn new(
@@ -22,6 +23,7 @@ pub fn new(
     style: GenericStyle,
     hovered_style: GenericStyle,
     pressed_style: GenericStyle,
+    selected_style: GenericStyle,
 ) -> Result<LayoutNode, ConfigError> {
     super::validate_children(node, children.len(), 1)?;
     match &children[0] {
@@ -38,6 +40,7 @@ pub fn new(
         style,
         hovered_style,
         pressed_style,
+        selected_style,
     }))
 }
 
@@ -108,16 +111,21 @@ pub fn view<'a>(data: &'a ItemsNodeData, menu: &'a IcedMenu) -> Vec<Element<'a, 
             let item = &menu.items[*item_index];
             let children = LayoutNode::view(&data.child, menu, Some(item));
             let result = iced::widget::button(children).on_press(Message::MouseClicked(item.index));
-            let style = if menu.cursor_position == visible_index {
-                &data.hovered_style
-            } else {
-                &data.style
+            let style = match (menu.cursor_position == visible_index, item.selected) {
+                (true, true) => {
+                    let mut s = data.selected_style;
+                    s.update_from(&data.hovered_style);
+                    s
+                }
+                (true, false) => data.hovered_style,
+                (false, true) => data.selected_style,
+                (false, false) => data.style,
             };
             apply_styles!(result, style; width, height, padding;)
                 .style(ButtonTheme::create(
-                    style.clone(),
-                    data.hovered_style.clone(),
-                    data.pressed_style.clone(),
+                    style,
+                    data.hovered_style,
+                    data.pressed_style,
                 ))
                 .into()
         })

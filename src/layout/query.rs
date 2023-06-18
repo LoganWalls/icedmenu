@@ -128,9 +128,9 @@ pub fn view<'a>(data: &QueryNodeData, menu: &IcedMenu) -> Element<'a, Message> {
         size: font_size,
     )
     .style(TextInputTheme::create(
-        style.clone(),
-        data.focused_style.clone(),
-        data.hovered_style.clone(),
+        *style,
+        data.focused_style,
+        data.hovered_style,
     ))
     .into()
 }
