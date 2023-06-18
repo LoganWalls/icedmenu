@@ -44,7 +44,6 @@ pub struct GenericStyle {
     pub horizontal_alignment: Option<iced::alignment::Horizontal>,
     pub vertical_alignment: Option<iced::alignment::Vertical>,
     pub align_items: Option<iced::alignment::Alignment>,
-    pub color: Option<iced::Color>,
     pub border_color: Option<iced::Color>,
     pub text_color: Option<iced::Color>,
     pub match_text_color: Option<iced::Color>,
@@ -99,7 +98,6 @@ impl GenericStyle {
                         }),
                     }?)
                 }
-                "color" => result.color = Some(color_attr(child, value_def)?),
                 "border_color" => result.border_color = Some(color_attr(child, value_def)?),
                 "text_color" => result.text_color = Some(color_attr(child, value_def)?),
                 "match_text_color" => result.match_text_color = Some(color_attr(child, value_def)?),

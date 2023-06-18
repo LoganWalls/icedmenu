@@ -51,7 +51,7 @@ pub fn view(data: &TextNodeData) -> Element<Message> {
         height,
         horizontal_alignment,
         vertical_alignment;
-        style: color,
+        style: text_color,
         size: font_size,
     )
     .into()

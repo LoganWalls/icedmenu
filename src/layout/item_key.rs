@@ -70,7 +70,7 @@ pub fn view<'a>(
                 horizontal_alignment,
                 vertical_alignment,
                 font;
-                style: color,
+                style: text_color,
                 size: font_size,
             );
             // Sets the color of the text that matches the query string
