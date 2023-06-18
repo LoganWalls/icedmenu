@@ -77,7 +77,13 @@ impl LayoutNode {
                     node_type,
                     State::Focused,
                 ));
-                query::new(node, children, style, focused_style)
+                let mut hovered_style = style.clone();
+                hovered_style.update_from(&style_lookup.style_for(
+                    &style_names,
+                    node_type,
+                    State::Hovered,
+                ));
+                query::new(node, children, style, focused_style, hovered_style)
             }
             "Items" => items::new(node, children, style),
             "ItemKey" => item_key::new(node, children, style),

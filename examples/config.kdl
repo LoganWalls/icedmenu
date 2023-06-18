@@ -24,4 +24,13 @@ Styles {
         padding 10
         font "Comic Sans MS"
     }
+    Query:focused {
+        border_color "pink"
+        border_width 4
+    }
+    Query:hovered {
+        border_color "lightgreen"
+        border_width 5
+    }
+
 }

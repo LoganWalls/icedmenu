@@ -1,9 +1,9 @@
 use iced::widget::text_input::{Appearance, StyleSheet};
 use iced::{widget, Color, Element};
-use icedmenu::{apply_styles, UpdateFromOther};
+use icedmenu::apply_styles;
 use kdl::KdlNode;
 
-use super::style::{GenericStyle, StyleLookup};
+use super::style::GenericStyle;
 use super::LayoutNode;
 use crate::app::{IcedMenu, Message};
 use crate::config::ConfigError;
@@ -13,6 +13,7 @@ pub struct QueryNodeData {
     pub children: Vec<LayoutNode>,
     pub style: GenericStyle,
     pub focused_style: GenericStyle,
+    pub hovered_style: GenericStyle,
 }
 
 pub fn new(
@@ -20,26 +21,34 @@ pub fn new(
     children: Vec<LayoutNode>,
     style: GenericStyle,
     focused_style: GenericStyle,
+    hovered_style: GenericStyle,
 ) -> Result<LayoutNode, ConfigError> {
     super::validate_children(node, children.len(), 0)?;
     Ok(LayoutNode::Query(QueryNodeData {
         children,
         style,
         focused_style,
+        hovered_style,
     }))
 }
 
 struct TextInputTheme {
     style: GenericStyle,
     focused_style: GenericStyle,
+    hovered_style: GenericStyle,
     default_theme: iced::theme::TextInput,
 }
 
 impl TextInputTheme {
-    fn create(style: GenericStyle, focused_style: GenericStyle) -> iced::theme::TextInput {
+    fn create(
+        style: GenericStyle,
+        focused_style: GenericStyle,
+        hovered_style: GenericStyle,
+    ) -> iced::theme::TextInput {
         iced::theme::TextInput::Custom(Box::from(Self {
             style,
             focused_style,
+            hovered_style,
             default_theme: iced::theme::TextInput::default(),
         }))
     }
@@ -78,7 +87,7 @@ impl StyleSheet for TextInputTheme {
 
     fn hovered(&self, style: &Self::Style) -> Appearance {
         let result = style.hovered(&self.default_theme);
-        Self::patch_appearance(result, &self.style)
+        Self::patch_appearance(result, &self.hovered_style)
     }
 
     fn disabled(&self, style: &Self::Style) -> Appearance {
@@ -121,6 +130,7 @@ pub fn view<'a>(data: &QueryNodeData, menu: &IcedMenu) -> Element<'a, Message> {
     .style(TextInputTheme::create(
         style.clone(),
         data.focused_style.clone(),
+        data.hovered_style.clone(),
     ))
     .into()
 }
