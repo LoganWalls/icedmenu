@@ -26,7 +26,10 @@ Styles {
     }
     ItemKey {
         font "Arial"
-        match_text_color "red"
+        match_text_color "lightgreen"
+    }
+    ItemKey:hovered {
+        match_text_color "pink"
     }
     Query {
         padding 10

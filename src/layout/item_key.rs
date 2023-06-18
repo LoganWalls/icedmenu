@@ -4,24 +4,44 @@ use icedmenu::apply_styles;
 use kdl::KdlNode;
 
 use super::style::GenericStyle;
-use super::{LayoutNode, NodeData};
-use crate::app::Message;
+use super::LayoutNode;
+use crate::app::{IcedMenu, Message};
 use crate::config::ConfigError;
 use crate::item::Item;
+
+#[derive(Debug)]
+pub struct ItemKeyNodeData {
+    pub children: Vec<LayoutNode>,
+    pub style: GenericStyle,
+    pub hovered_style: GenericStyle,
+}
 
 pub fn new(
     node: &KdlNode,
     children: Vec<LayoutNode>,
     style: GenericStyle,
+    hovered_style: GenericStyle,
 ) -> Result<LayoutNode, ConfigError> {
     super::validate_children(node, children.len(), 0)?;
-    Ok(LayoutNode::ItemKey(NodeData { children, style }))
+    Ok(LayoutNode::ItemKey(ItemKeyNodeData {
+        children,
+        style,
+        hovered_style,
+    }))
 }
 
-pub fn view<'a>(data: &NodeData, item: Option<&'a Item>) -> Element<'a, Message> {
+pub fn view<'a>(
+    data: &ItemKeyNodeData,
+    menu: &IcedMenu,
+    item: Option<&'a Item>,
+) -> Element<'a, Message> {
     let item = item.expect("no Item provided to ItemKey");
-    let style = &data.style;
-
+    // Use hovered style if this item is under the cursor
+    let style = if item.index == menu.visible_items[menu.cursor_position] {
+        &data.hovered_style
+    } else {
+        &data.style
+    };
     let mut content = Vec::new();
     // Selected indicator
     if item.selected {

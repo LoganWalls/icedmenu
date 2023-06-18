@@ -31,7 +31,7 @@ pub enum LayoutNode {
     Column(NodeData),
     Query(query::QueryNodeData),
     Items(ItemsNodeData),
-    ItemKey(NodeData),
+    ItemKey(item_key::ItemKeyNodeData),
     Text(Box<text::TextNodeData>),
 }
 
@@ -100,7 +100,15 @@ impl LayoutNode {
                 ));
                 items::new(node, children, style, hovered_style, pressed_style)
             }
-            "ItemKey" => item_key::new(node, children, style),
+            "ItemKey" => {
+                let mut hovered_style = style.clone();
+                hovered_style.update_from(&style_lookup.style_for(
+                    &style_names,
+                    node_type,
+                    State::Hovered,
+                ));
+                item_key::new(node, children, style, hovered_style)
+            }
             _ => Err(ConfigError::InvalidLayoutNode {
                 node_src: *node.name().span(),
                 help: format!(
@@ -122,7 +130,7 @@ impl LayoutNode {
             Self::Column(data) => column::view(data, menu, item),
             Self::Query(data) => query::view(data, menu),
             Self::Text(data) => text::view(data),
-            Self::ItemKey(data) => item_key::view(data, item),
+            Self::ItemKey(data) => item_key::view(data, menu, item),
             Self::Items(_) => {
                 // Layouts are validated so that Items must be the child of a Row or Column
                 // (which call item::view() directly) so this branch should never be reached
