@@ -1,8 +1,6 @@
 use iced::widget::{text, Row};
 use iced::Element;
-use icedmenu::{
-    apply_height_styles, apply_styles, apply_width_styles, get_item_style, UpdateFromOther,
-};
+use icedmenu::{apply_height_styles, apply_styles, get_item_style, UpdateFromOther};
 use kdl::KdlNode;
 
 use super::style::GenericStyle;
@@ -88,9 +86,6 @@ pub fn height(data: &ItemKeyNodeData, menu: &IcedMenu, item: Option<&Item>) -> u
 pub fn width(data: &ItemKeyNodeData, menu: &IcedMenu, item: Option<&Item>) -> u32 {
     let item = item.expect("no Item provided to ItemKey");
     let style = get_item_style!(item, data, menu);
-    apply_width_styles!(
-        item.data.key.chars().count() as u32
-            * style.font_size.unwrap_or(crate::app::DEFAULT_FONT_SIZE) as u32,
-        style
-    )
+    item.data.key.chars().count() as u32
+        * style.font_size.unwrap_or(crate::app::DEFAULT_FONT_SIZE) as u32
 }
