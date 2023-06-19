@@ -66,8 +66,9 @@ impl IcedMenu {
         candidates.sort_by(|a, b| b.cmp(a));
         self.visible_items = candidates
             .iter()
-            .take(self.cli_args.max_visible - self.selected_items.len())
             .map(|item| item.index)
+            .filter(|i| !self.selected_items.contains(i))
+            .take(self.cli_args.max_visible - self.selected_items.len())
             .chain(self.selected_items.iter().copied())
             .collect();
     }
