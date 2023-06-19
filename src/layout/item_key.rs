@@ -1,6 +1,8 @@
 use iced::widget::{text, Row};
 use iced::Element;
-use icedmenu::{apply_styles, UpdateFromOther};
+use icedmenu::{
+    apply_height_styles, apply_styles, apply_width_styles, get_item_style, UpdateFromOther,
+};
 use kdl::KdlNode;
 
 use super::style::GenericStyle;
@@ -11,7 +13,6 @@ use crate::item::Item;
 
 #[derive(Debug)]
 pub struct ItemKeyNodeData {
-    pub children: Vec<LayoutNode>,
     pub style: GenericStyle,
     pub hovered_style: GenericStyle,
     pub selected_style: GenericStyle,
@@ -25,12 +26,11 @@ pub fn new(
     selected_style: GenericStyle,
 ) -> Result<LayoutNode, ConfigError> {
     super::validate_children(node, children.len(), 0)?;
-    Ok(LayoutNode::ItemKey(ItemKeyNodeData {
-        children,
+    Ok(LayoutNode::ItemKey(Box::new(ItemKeyNodeData {
         style,
         hovered_style,
         selected_style,
-    }))
+    })))
 }
 
 pub fn view<'a>(
@@ -40,19 +40,7 @@ pub fn view<'a>(
 ) -> Element<'a, Message> {
     let item = item.expect("no Item provided to ItemKey");
     // Use hovered style if this item is under the cursor
-    let style = match (
-        menu.visible_items[menu.cursor_position] == item.index,
-        item.selected,
-    ) {
-        (true, true) => {
-            let mut s: GenericStyle = data.selected_style;
-            s.update_from(&data.hovered_style);
-            s
-        }
-        (true, false) => data.hovered_style,
-        (false, true) => data.selected_style,
-        (false, false) => data.style,
-    };
+    let style = get_item_style!(item, data, menu);
     let mut content = Vec::new();
 
     // Item text with match highlights
@@ -65,10 +53,7 @@ pub fn view<'a>(
             t = apply_styles!(
                 t,
                 style;
-                width,
                 height,
-                horizontal_alignment,
-                vertical_alignment,
                 font;
                 style: text_color,
                 size: font_size,
@@ -84,5 +69,27 @@ pub fn view<'a>(
         })
         .collect();
     content.append(&mut texts);
-    Row::with_children(content).into()
+    Row::with_children(content)
+        .spacing(0)
+        .width(iced::Length::Shrink)
+        .into()
+}
+
+pub fn height(data: &ItemKeyNodeData, menu: &IcedMenu, item: Option<&Item>) -> u32 {
+    let item = item.expect("no Item provided to ItemKey");
+    let style = get_item_style!(item, data, menu);
+    apply_height_styles!(
+        style.font_size.unwrap_or(crate::app::DEFAULT_FONT_SIZE) as u32,
+        style
+    )
+}
+
+pub fn width(data: &ItemKeyNodeData, menu: &IcedMenu, item: Option<&Item>) -> u32 {
+    let item = item.expect("no Item provided to ItemKey");
+    let style = get_item_style!(item, data, menu);
+    apply_width_styles!(
+        item.data.key.chars().count() as u32
+            * style.font_size.unwrap_or(crate::app::DEFAULT_FONT_SIZE) as u32,
+        style
+    )
 }

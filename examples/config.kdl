@@ -1,9 +1,9 @@
 Layout {
     Column {
         Query
-        Col ".item-container" {
+        Column ".item-container" {
             Items {
-                Row {
+                Container {
                     ItemKey
                 }
             }
@@ -13,13 +13,17 @@ Layout {
 
 Styles {
     Layout {
-        width 400
-        padding 10
+        padding 6
         background "mediumpurple"
     }
     ".item-container" {
         padding 6
         spacing 8
+    }
+
+    Text {
+        vertical_alignment "center"
+        text_color "white"
     }
 
     Query {
@@ -57,8 +61,5 @@ Styles {
     ItemKey:hovered {
         text_color "mediumpurple"
         match_text_color "goldenrod"
-    }
-    ItemKey:selected {
-        text_color "red"
     }
 }

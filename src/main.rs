@@ -10,10 +10,11 @@ use crate::app::{Flags, IcedMenu};
 use clap::Parser;
 use iced::{window, Application, Settings};
 
+use self::app::DEFAULT_FONT_SIZE;
+
 fn main() -> iced::Result {
     let cli_args = cli::CliArgs::parse();
     let flags = Flags::new(cli_args);
-    let n_visible_items = flags.items.len().min(flags.cli_args.max_visible);
 
     // Get input from stdin
     let window = window::Settings {
@@ -21,12 +22,13 @@ fn main() -> iced::Result {
         resizable: false,
         transparent: true,
         always_on_top: true,
-        max_size: Some((1000, IcedMenu::window_height(n_visible_items as u16))),
+        max_size: None,
         ..Default::default()
     };
 
     // Display app
     let mut settings = Settings::with_flags(flags);
     settings.window = window;
+    settings.default_text_size = DEFAULT_FONT_SIZE;
     IcedMenu::run(settings)
 }

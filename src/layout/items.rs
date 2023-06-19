@@ -1,6 +1,8 @@
 use iced::widget::button::{Appearance, StyleSheet};
 use iced::Element;
-use icedmenu::{apply_styles, UpdateFromOther};
+use icedmenu::{
+    apply_height_styles, apply_styles, apply_width_styles, get_item_style, UpdateFromOther,
+};
 use kdl::KdlNode;
 
 use super::style::GenericStyle;
@@ -103,24 +105,14 @@ impl StyleSheet for ButtonTheme {
     }
 }
 
-pub fn view<'a>(data: &'a ItemsNodeData, menu: &'a IcedMenu) -> Vec<Element<'a, Message>> {
+pub fn views<'a>(data: &'a ItemsNodeData, menu: &'a IcedMenu) -> Vec<Element<'a, Message>> {
     menu.visible_items
         .iter()
-        .enumerate()
-        .map(|(visible_index, item_index)| {
+        .map(|item_index| {
             let item = &menu.items[*item_index];
             let children = LayoutNode::view(&data.child, menu, Some(item));
             let result = iced::widget::button(children).on_press(Message::MouseClicked(item.index));
-            let style = match (menu.cursor_position == visible_index, item.selected) {
-                (true, true) => {
-                    let mut s = data.selected_style;
-                    s.update_from(&data.hovered_style);
-                    s
-                }
-                (true, false) => data.hovered_style,
-                (false, true) => data.selected_style,
-                (false, false) => data.style,
-            };
+            let style = get_item_style!(item, data, menu);
             apply_styles!(result, style; width, height, padding;)
                 .style(ButtonTheme::create(
                     style,
@@ -128,6 +120,32 @@ pub fn view<'a>(data: &'a ItemsNodeData, menu: &'a IcedMenu) -> Vec<Element<'a, 
                     data.pressed_style,
                 ))
                 .into()
+        })
+        .collect()
+}
+
+pub fn heights(data: &ItemsNodeData, menu: &IcedMenu) -> Vec<u32> {
+    menu.visible_items
+        .iter()
+        .map(|item_index| {
+            let item = &menu.items[*item_index];
+            let style = get_item_style!(item, data, menu);
+            let item_height = LayoutNode::height(&data.child, menu, Some(item));
+            apply_height_styles!(item_height + 2 * style.padding.unwrap_or(0) as u32, style)
+                + 2 * style.border_width.unwrap_or(0.0) as u32
+        })
+        .collect()
+}
+
+pub fn widths(data: &ItemsNodeData, menu: &IcedMenu) -> Vec<u32> {
+    menu.visible_items
+        .iter()
+        .map(|item_index| {
+            let item = &menu.items[*item_index];
+            let style = get_item_style!(item, data, menu);
+            let item_width = LayoutNode::width(&data.child, menu, Some(item));
+            apply_width_styles!(item_width + 2 * style.padding.unwrap_or(0) as u32, style)
+                + 2 * style.border_width.unwrap_or(0.0) as u32
         })
         .collect()
 }

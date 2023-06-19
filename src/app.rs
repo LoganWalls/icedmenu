@@ -14,6 +14,8 @@ use std::error::Error;
 use std::io::{self, Write};
 use std::path::PathBuf;
 
+pub const DEFAULT_FONT_SIZE: f32 = 16.0;
+
 pub struct IcedMenu {
     pub cli_args: CliArgs,
     pub items: Vec<Item>,
@@ -118,21 +120,6 @@ impl IcedMenu {
 
     fn index_under_cursor(&self) -> usize {
         self.visible_items[self.cursor_position]
-    }
-
-    pub fn window_height(n_items: u16) -> u32 {
-        let query_font_size = 20;
-        let item_font_size = 20;
-        let query_padding = 10;
-        let item_padding = 10;
-        let padding = 10;
-        let item_spacing = 10;
-        (query_font_size
-            + 2 * query_padding
-            + n_items * (item_font_size + 2 * item_padding)
-            + n_items * item_spacing
-            + 2 * padding)
-            .into()
     }
 
     fn submit(&self) {
@@ -278,9 +265,12 @@ impl Application for IcedMenu {
             cursor_position: 0,
         };
         menu.update_items();
+        let width = LayoutNode::width(&menu.layout, &menu, None);
+        let height = LayoutNode::height(&menu.layout, &menu, None);
         (
             menu,
             Command::batch(vec![
+                window::resize::<Message>(width, height),
                 text_input::focus(query_input_id),
                 window::gain_focus(),
             ]),
@@ -314,7 +304,10 @@ impl Application for IcedMenu {
                 let num_items = self.visible_items.len();
                 if num_items != num_items_prev {
                     self.move_cursor(CursorMoveDirection::Reset);
-                    window::resize::<Message>(1000, Self::window_height(num_items as u16))
+                    window::resize::<Message>(
+                        LayoutNode::width(&self.layout, self, None),
+                        LayoutNode::height(&self.layout, self, None),
+                    )
                 } else {
                     Command::none()
                 }

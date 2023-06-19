@@ -1,6 +1,6 @@
 use iced::widget::container::{Appearance, StyleSheet};
 use iced::{widget, Element};
-use icedmenu::apply_styles;
+use icedmenu::{apply_height_styles, apply_styles, apply_width_styles};
 use kdl::KdlNode;
 
 use super::LayoutNode;
@@ -82,4 +82,20 @@ pub fn view<'a>(
         align_y: vertical_alignment,
     )
     .into()
+}
+
+pub fn height(data: &ContainerNodeData, menu: &IcedMenu, item: Option<&Item>) -> u32 {
+    let style = &data.style;
+    let child_height = LayoutNode::height(&data.child, menu, item);
+    let padding = style.padding.unwrap_or(0) as u32;
+    let border_width = style.border_width.unwrap_or(0.0) as u32;
+    apply_height_styles!(child_height + 2 * padding, style) + 2 * border_width
+}
+
+pub fn width(data: &ContainerNodeData, menu: &IcedMenu, item: Option<&Item>) -> u32 {
+    let style = &data.style;
+    let child_width = LayoutNode::width(&data.child, menu, item);
+    let padding = style.padding.unwrap_or(0) as u32;
+    let border_width = style.border_width.unwrap_or(0.0) as u32;
+    apply_width_styles!(child_width + 2 * padding, style) + 2 * border_width
 }

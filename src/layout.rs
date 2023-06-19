@@ -29,9 +29,9 @@ pub enum LayoutNode {
     Container(container::ContainerNodeData),
     Row(NodeData),
     Column(NodeData),
-    Query(query::QueryNodeData),
+    Query(Box<query::QueryNodeData>),
     Items(ItemsNodeData),
-    ItemKey(item_key::ItemKeyNodeData),
+    ItemKey(Box<item_key::ItemKeyNodeData>),
     Text(Box<text::TextNodeData>),
 }
 
@@ -153,6 +153,37 @@ impl LayoutNode {
             Self::Items(_) => {
                 // Layouts are validated so that Items must be the child of a Row or Column
                 // (which call item::view() directly) so this branch should never be reached
+                unreachable!()
+            }
+        }
+    }
+
+    pub fn height(node: &Self, menu: &IcedMenu, item: Option<&Item>) -> u32 {
+        match node {
+            Self::Container(data) => container::height(data, menu, item),
+            Self::Row(data) => row::height(data, menu, item),
+            Self::Column(data) => column::height(data, menu, item),
+            Self::Query(data) => query::height(data),
+            Self::Text(data) => text::height(data),
+            Self::ItemKey(data) => item_key::height(data, menu, item),
+            Self::Items(_) => {
+                // Layouts are validated so that Items must be the child of a Row or Column
+                // (which call item::height() directly) so this branch should never be reached
+                unreachable!()
+            }
+        }
+    }
+    pub fn width(node: &Self, menu: &IcedMenu, item: Option<&Item>) -> u32 {
+        match node {
+            Self::Container(data) => container::width(data, menu, item),
+            Self::Row(data) => row::width(data, menu, item),
+            Self::Column(data) => column::width(data, menu, item),
+            Self::Query(data) => query::width(data, menu),
+            Self::Text(data) => text::width(data),
+            Self::ItemKey(data) => item_key::width(data, menu, item),
+            Self::Items(_) => {
+                // Layouts are validated so that Items must be the child of a Row or Column
+                // (which call item::width() directly) so this branch should never be reached
                 unreachable!()
             }
         }

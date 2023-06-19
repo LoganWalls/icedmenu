@@ -1,6 +1,6 @@
 use iced::widget::text_input::{Appearance, StyleSheet};
 use iced::{widget, Color, Element};
-use icedmenu::apply_styles;
+use icedmenu::{apply_styles, apply_width_styles};
 use kdl::KdlNode;
 
 use super::style::GenericStyle;
@@ -10,7 +10,6 @@ use crate::config::ConfigError;
 
 #[derive(Debug)]
 pub struct QueryNodeData {
-    pub children: Vec<LayoutNode>,
     pub style: GenericStyle,
     pub focused_style: GenericStyle,
     pub hovered_style: GenericStyle,
@@ -24,12 +23,11 @@ pub fn new(
     hovered_style: GenericStyle,
 ) -> Result<LayoutNode, ConfigError> {
     super::validate_children(node, children.len(), 0)?;
-    Ok(LayoutNode::Query(QueryNodeData {
-        children,
+    Ok(LayoutNode::Query(Box::new(QueryNodeData {
         style,
         focused_style,
         hovered_style,
-    }))
+    })))
 }
 
 struct TextInputTheme {
@@ -133,4 +131,23 @@ pub fn view<'a>(data: &QueryNodeData, menu: &IcedMenu) -> Element<'a, Message> {
         data.hovered_style,
     ))
     .into()
+}
+
+pub fn height(data: &QueryNodeData) -> u32 {
+    let style = &data.style;
+    let font = style.font_size.unwrap_or(crate::app::DEFAULT_FONT_SIZE) as u32;
+    let padding = style.padding.unwrap_or(0) as u32;
+    font + 2 * padding
+}
+
+pub fn width(data: &QueryNodeData, menu: &IcedMenu) -> u32 {
+    let style = &data.style;
+    let font = style.font_size.unwrap_or(crate::app::DEFAULT_FONT_SIZE) as u32;
+    let padding = style.padding.unwrap_or(0) as u32;
+    let text_width = std::cmp::max(
+        menu.cli_args.prompt.chars().count(),
+        menu.query.chars().count(),
+    ) as u32
+        * font;
+    apply_width_styles!(text_width, style) + 2 * padding
 }
