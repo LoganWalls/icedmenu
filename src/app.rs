@@ -1,12 +1,12 @@
 use crate::callback::Callback;
 use crate::cli::{CaseSensitivity, CliArgs};
-use crate::config::{AppContainer, LAYOUT_KEY, STYLES_KEY};
+use crate::config::{LAYOUT_KEY, STYLES_KEY};
 use crate::item::{self, Item};
 use crate::layout::{style::parse_styles, LayoutNode};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use iced::keyboard::{self, KeyCode};
-use iced::widget::{container, text_input};
+use iced::widget::text_input;
 use iced::{
     executor, subscription, window, Application, Command, Element, Event, Subscription, Theme,
 };
@@ -119,7 +119,7 @@ impl IcedMenu {
         };
     }
 
-    fn index_under_cursor(&self) -> usize {
+    pub fn index_under_cursor(&self) -> usize {
         self.visible_items[self.cursor_position]
     }
 
@@ -282,18 +282,15 @@ impl Application for IcedMenu {
         self.cli_args.prompt.clone()
     }
 
-    // fn theme(&self) -> Self::Theme {
-    //     Theme::custom(theme::Palette {
-    //         background: Color::TRANSPARENT,
-    //         ..Theme::default().palette()
-    //     })
-    // }
+    fn theme(&self) -> Self::Theme {
+        Theme::custom(iced::theme::Palette {
+            background: iced::Color::TRANSPARENT,
+            ..Theme::Light.palette()
+        })
+    }
 
     fn view(&self) -> Element<Message> {
-        let menu = LayoutNode::view(&self.layout, self, None);
-        container(menu)
-            .style(iced::theme::Container::Custom(AppContainer::new()))
-            .into()
+        LayoutNode::view(&self.layout, self, None)
     }
 
     fn update(&mut self, message: Message) -> Command<Self::Message> {

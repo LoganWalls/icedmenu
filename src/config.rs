@@ -1,4 +1,3 @@
-use iced::widget::container;
 use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
@@ -80,21 +79,4 @@ pub enum ConfigError {
         #[help]
         help: String,
     },
-}
-
-pub struct AppContainer;
-
-impl AppContainer {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new() -> Box<dyn container::StyleSheet<Style = iced::theme::Theme>> {
-        Box::new(Self {}) as Box<dyn container::StyleSheet<Style = iced::theme::Theme>>
-    }
-}
-
-impl container::StyleSheet for AppContainer {
-    type Style = iced::theme::Theme;
-
-    fn appearance(&self, _style: &Self::Style) -> container::Appearance {
-        _style.appearance(&iced::theme::Container::default())
-    }
 }

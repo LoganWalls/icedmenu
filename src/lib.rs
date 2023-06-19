@@ -11,10 +11,7 @@ pub trait UpdateFromOther {
 #[macro_export]
 macro_rules! get_item_style {
     ($item:ident, $item_data:ident, $menu:ident) => {
-        match (
-            $menu.visible_items[$menu.cursor_position] == $item.index,
-            $item.selected,
-        ) {
+        match ($menu.index_under_cursor() == $item.index, $item.selected) {
             (true, true) => {
                 let mut s: GenericStyle = $item_data.selected_style;
                 s.update_from(&$item_data.hovered_style);
