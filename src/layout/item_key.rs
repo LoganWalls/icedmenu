@@ -71,6 +71,7 @@ pub fn view<'a>(
     content.append(&mut texts);
     Row::with_children(content)
         .spacing(0)
+        .padding(0)
         .width(iced::Length::Shrink)
         .into()
 }
