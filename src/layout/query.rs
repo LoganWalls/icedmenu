@@ -98,7 +98,9 @@ impl StyleSheet for TextInputTheme {
     }
 
     fn value_color(&self, style: &Self::Style) -> Color {
-        style.value_color(&self.default_theme)
+        self.style
+            .text_color
+            .unwrap_or_else(|| style.value_color(&self.default_theme))
     }
 
     fn selection_color(&self, style: &Self::Style) -> Color {

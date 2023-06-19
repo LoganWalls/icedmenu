@@ -21,14 +21,11 @@ Styles {
         spacing 8
     }
 
-    Text {
-        vertical_alignment "center"
-        text_color "white"
-    }
-
     Query {
+        text_color "black"
         padding 10
         font "Comic Sans MS"
+        background "white"
     }
     Query:focused {
         border_color "khaki"
