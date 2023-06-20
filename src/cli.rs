@@ -43,7 +43,8 @@ pub struct CliArgs {
     pub max_visible: usize,
 
     /// Execute an external command to populate items whenever the query is changed
-    /// The $QUERY env variable will be set to the current query before each execution
-    #[arg(long, value_name = "COMMAND", verbatim_doc_comment)]
-    pub callback: Option<String>,
+    /// String args with the value $QUERY will be set to the current query before
+    /// each execution.
+    #[arg(last = true, value_name = "COMMAND", verbatim_doc_comment, num_args = 1..)]
+    pub callback: Option<Vec<String>>,
 }

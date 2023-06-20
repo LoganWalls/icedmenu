@@ -3,32 +3,29 @@ use std::io;
 use std::process::Command;
 
 pub struct Callback {
-    command: Command,
+    program: String,
+    args: Vec<String>,
 }
 
-const QUERY_VAR_NAME: &str = "QUERY";
+const QUERY_VAR_NAME: &str = "$QUERY";
 
 impl Callback {
-    pub fn new(args: String) -> Self {
-        let mut command = if cfg!(target_os = "windows") {
-            Command::new("cmd")
-        } else {
-            let mut c = Command::new("sh");
-            c.arg("-c");
-            c
-        };
-        // Although args can contain multiple args, it is a string
-        // passed directly to sh or cmd, so it is a single arg from
-        // the Command perspective.
-        command.arg(args);
-
-        Self { command }
+    pub fn new(cli_args: Vec<String>) -> Self {
+        let program = cli_args
+            .get(0)
+            .unwrap_or_else(|| unreachable!("Clap should force at least one argument for callback"))
+            .to_string();
+        let args = cli_args.iter().skip(1).map(String::from).collect();
+        Self { program, args }
     }
 
     pub fn call(&mut self, query: &str) -> Vec<item::Item> {
-        let output = self
-            .command
-            .env(QUERY_VAR_NAME, query)
+        let output = Command::new(&self.program)
+            .args(
+                self.args
+                    .iter()
+                    .map(|a| if a == QUERY_VAR_NAME { query } else { a }),
+            )
             .output()
             .expect("Error running callback");
         item::parse_items(io::Cursor::new(output.stdout)).expect("Problem parsing callback output")
