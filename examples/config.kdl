@@ -15,6 +15,7 @@ Styles {
     Layout {
         padding 6
         background "mediumpurple"
+        border_radius 20
     }
     ".item-container" {
         padding 6
@@ -28,7 +29,7 @@ Styles {
         background "white"
     }
     Query:focused {
-        border_color "khaki"
+        border_color "gold"
         border_width 2
     }
     Query:hovered {
@@ -38,9 +39,9 @@ Styles {
 
     Items {
         padding 6
-        width "shrink"
         text_color "white"
         border_radius 6
+        max_width 200
     }
     ItemKey {
         font "Comic Sans MS"
@@ -51,8 +52,7 @@ Styles {
         border_width 2
     }
     Items:hovered {
-        border_radius 6
-        background "khaki"
+        background "gold"
         text_color "mediumpurple"
     }
     ItemKey:hovered {
