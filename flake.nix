@@ -1,5 +1,5 @@
 {
-  description = "A cross-platform dmenu, iced.";
+  description = "A cross-platform dmenu, powered by iced";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     fenix = {
@@ -16,17 +16,18 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    crane,
-    fenix,
-    flake-utils,
-    ...
-  }:
+  outputs =
+    { self
+    , nixpkgs
+    , crane
+    , fenix
+    , flake-utils
+    , ...
+    }:
     flake-utils.lib.eachDefaultSystem (
-      system: let
-        pkgs = import nixpkgs {inherit system;};
+      system:
+      let
+        pkgs = import nixpkgs { inherit system; };
         inherit (pkgs) lib stdenv;
         fenixPkgs = fenix.packages.${system};
         rustToolchain = fenixPkgs.stable.toolchain;
@@ -41,7 +42,8 @@
           src = craneLib.cleanCargoSource ./.;
           buildInputs = buildDeps;
         };
-      in {
+      in
+      {
         checks = {
           inherit crate;
         };
@@ -51,8 +53,8 @@
         };
         devShell = pkgs.mkShell {
           inputsFrom = builtins.attrValues self.checks;
-          buildInputs = [fenixPkgs.rust-analyzer buildDeps];
-          nativeBuildInputs = [rustToolchain];
+          buildInputs = [ fenixPkgs.rust-analyzer buildDeps ];
+          nativeBuildInputs = [ rustToolchain ];
         };
       }
     );
