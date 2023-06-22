@@ -43,6 +43,7 @@ Styles {
         background "rgb(29, 93 177)"
     }
     ItemKey {
+        font_size 20
         match_text_color "rgb(10, 132, 255)"
     }
 }
