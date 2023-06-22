@@ -94,7 +94,9 @@ impl StyleSheet for TextInputTheme {
     }
 
     fn placeholder_color(&self, style: &Self::Style) -> Color {
-        style.placeholder_color(&self.default_theme)
+        self.style
+            .placeholder_color
+            .unwrap_or_else(|| style.placeholder_color(&self.default_theme))
     }
 
     fn value_color(&self, style: &Self::Style) -> Color {

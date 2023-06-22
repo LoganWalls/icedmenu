@@ -47,6 +47,7 @@ pub struct GenericStyle {
     pub border_color: Option<iced::Color>,
     pub text_color: Option<iced::Color>,
     pub match_text_color: Option<iced::Color>,
+    pub placeholder_color: Option<iced::Color>,
     pub icon_color: Option<iced::Color>,
     pub background: Option<iced::Background>,
     pub font: Option<iced::Font>,
@@ -101,6 +102,9 @@ impl GenericStyle {
                 "border_color" => result.border_color = Some(color_attr(child, value_def)?),
                 "text_color" => result.text_color = Some(color_attr(child, value_def)?),
                 "match_text_color" => result.match_text_color = Some(color_attr(child, value_def)?),
+                "placeholder_color" => {
+                    result.placeholder_color = Some(color_attr(child, value_def)?)
+                }
                 "icon_color" => result.icon_color = Some(color_attr(child, value_def)?),
                 "background" => {
                     result.background =
