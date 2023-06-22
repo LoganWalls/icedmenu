@@ -10,6 +10,7 @@ use iced::widget::text_input;
 use iced::{
     executor, subscription, window, Application, Command, Element, Event, Subscription, Theme,
 };
+use std::collections::HashSet;
 use std::error::Error;
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -31,10 +32,40 @@ pub struct IcedMenu {
 impl IcedMenu {
     fn update_items(&mut self) {
         if let Some(callback) = &mut self.callback {
-            self.items = callback.call(&self.query);
-            self.items.truncate(self.cli_args.max_visible);
-            self.selected_items = Vec::new();
-            self.visible_items = Vec::from_iter(0..self.items.len());
+            let new_items = callback.call(&self.query);
+            let cur_selected_items: Vec<Item> = self
+                .selected_items
+                .iter()
+                .map(|i| self.items[*i].clone())
+                .collect();
+            let selected_keys: HashSet<String> = cur_selected_items
+                .iter()
+                .map(|item| item.data.key.clone())
+                .collect();
+            self.items = new_items
+                .into_iter()
+                .filter(|item| !selected_keys.contains(&item.data.key))
+                .take(self.cli_args.max_visible - cur_selected_items.len())
+                .enumerate()
+                .map(|(i, mut item)| {
+                    item.index = i;
+                    item
+                })
+                .collect();
+            let n_new_items = self.items.len();
+            let mut new_selected = Vec::new();
+            self.items.extend(
+                cur_selected_items
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, mut item)| {
+                        item.index = i + n_new_items;
+                        new_selected.push(item.index);
+                        item
+                    }),
+            );
+            self.selected_items = new_selected;
+            self.visible_items = self.items.iter().map(|item| item.index).collect();
             return;
         }
         self.items.iter_mut().for_each(|item| {
@@ -57,19 +88,21 @@ impl IcedMenu {
                 }
             }
         });
-
         let mut candidates: Vec<&Item> = self
             .items
             .iter()
             .filter(|item| self.query.is_empty() || item.score.is_some())
             .collect();
         candidates.sort_by(|a, b| b.cmp(a));
+
+        // Make room for already-selected items, and add them at the end
         self.visible_items = candidates
             .iter()
-            .map(|item| item.index)
-            .filter(|i| !self.selected_items.contains(i))
+            .map(|item| &item.index)
+            .filter(|&i| !self.selected_items.contains(i))
             .take(self.cli_args.max_visible - self.selected_items.len())
-            .chain(self.selected_items.iter().copied())
+            .chain(self.selected_items.iter())
+            .copied()
             .collect();
     }
 

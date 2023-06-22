@@ -1,14 +1,14 @@
 use std::cmp::{Ord, Ordering};
 use std::{error::Error, io};
 
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, serde::Deserialize, serde::Serialize)]
 pub struct ItemData {
     pub key: String,
     #[serde(default)]
     pub value: Option<String>,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Item {
     pub index: usize,
     pub data: ItemData,
