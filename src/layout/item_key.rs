@@ -86,6 +86,6 @@ pub fn height(data: &ItemKeyNodeData, menu: &IcedMenu, item: Option<&Item>) -> u
 pub fn width(data: &ItemKeyNodeData, menu: &IcedMenu, item: Option<&Item>) -> u32 {
     let item = item.expect("no Item provided to ItemKey");
     let style = get_item_style!(item, data, menu);
-    item.data.key.chars().count() as u32
+    (item.data.key.chars().count() as f32 * 0.7) as u32
         * style.font_size.unwrap_or(crate::app::DEFAULT_FONT_SIZE) as u32
 }

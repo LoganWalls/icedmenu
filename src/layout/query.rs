@@ -146,10 +146,11 @@ pub fn width(data: &QueryNodeData, menu: &IcedMenu) -> u32 {
     let style = &data.style;
     let font = style.font_size.unwrap_or(crate::app::DEFAULT_FONT_SIZE) as u32;
     let padding = style.padding.unwrap_or(0) as u32;
-    let text_width = std::cmp::max(
+    let text_width = (std::cmp::max(
         menu.cli_args.prompt.chars().count(),
         menu.query.chars().count(),
-    ) as u32
+    ) as f32
+        * 0.7) as u32
         * font;
     apply_width_styles!(text_width, style) + 2 * padding
 }

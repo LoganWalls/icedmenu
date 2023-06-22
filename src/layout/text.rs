@@ -66,5 +66,8 @@ pub fn height(data: &TextNodeData) -> u32 {
 pub fn width(data: &TextNodeData) -> u32 {
     let style = &data.style;
     let font = style.font_size.unwrap_or(crate::app::DEFAULT_FONT_SIZE) as u32;
-    apply_width_styles!(data.value.chars().count() as u32 * font, style)
+    apply_width_styles!(
+        (data.value.chars().count() as f32 * 0.7) as u32 * font,
+        style
+    )
 }
