@@ -99,6 +99,18 @@ impl GenericStyle {
                         }),
                     }?)
                 }
+                "align_items" => {
+                    result.align_items = Some(match string_value(child, value_def)? {
+                        "top" => Ok(iced::alignment::Alignment::Start),
+                        "bottom" => Ok(iced::alignment::Alignment::End),
+                        "center" => Ok(iced::alignment::Alignment::Center),
+                        _ => Err(ConfigError::InvalidValue {
+                            attr_src: *child.span(),
+                            value_src: *value_def.span(),
+                            help: String::from("`align_items` can be one of: start, end, center"),
+                        }),
+                    }?)
+                }
                 "border_color" => result.border_color = Some(color_attr(child, value_def)?),
                 "text_color" => result.text_color = Some(color_attr(child, value_def)?),
                 "match_text_color" => result.match_text_color = Some(color_attr(child, value_def)?),
