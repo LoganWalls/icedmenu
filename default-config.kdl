@@ -1,0 +1,48 @@
+Layout ".round" {
+    Column {
+        Query ".round"
+        Column ".item-container" {
+            Items ".round" {
+                Container {
+                    ItemKey
+                }
+            }
+        }
+    }
+}
+
+Styles {
+    ".round" {
+        border_radius 6
+    }
+    ".item-container" {
+        padding 8
+    }
+    Layout {
+        background "rgb(32, 32, 32)"
+        padding 8
+        width 800
+    }
+    Query {
+        padding 10
+        font_size 26
+        background "rgb(35, 34, 32)"
+        text_color "#eeeeee"
+        placeholder_color "rgb(132, 132, 132)"
+        border_width 0
+    }
+    Items {
+        padding 8
+        text_color "#eeeeee"
+        width "fill"
+    }
+    Items:hovered {
+        background "rgb(29, 93 177)"
+    }
+    Items:selected {
+        background "rgb(29, 93 177)"
+    }
+    ItemKey {
+        match_text_color "rgb(10, 132, 255)"
+    }
+}

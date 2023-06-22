@@ -255,9 +255,15 @@ impl Flags {
     }
 
     fn get_layout(path: &Option<PathBuf>) -> miette::Result<LayoutNode> {
-        // TODO: replace unwrap with default style
-        let source_path = path.as_ref().unwrap();
-        let source = std::fs::read_to_string(source_path).expect("Could not read file");
+        let source_path;
+        let source;
+        if let Some(p) = path {
+            source_path = p.to_str().expect("Non-unicode path encountered");
+            source = std::fs::read_to_string(p).expect("Could not read file");
+        } else {
+            source_path = "(default config)";
+            source = include_str!("../default-config.kdl").to_string();
+        };
         let config: kdl::KdlDocument = source.parse()?;
         let layout_definition = config
             .get(LAYOUT_KEY)
@@ -269,10 +275,7 @@ impl Flags {
         let wrap_error = |e| {
             miette::Report::from(e)
                 .wrap_err("Could not read config file")
-                .with_source_code(miette::NamedSource::new(
-                    source_path.to_str().unwrap(),
-                    source.to_owned(),
-                ))
+                .with_source_code(miette::NamedSource::new(source_path, source.to_owned()))
         };
         let styles = parse_styles(styles_definition).map_err(wrap_error)?;
         LayoutNode::new(layout_definition, &styles).map_err(wrap_error)
