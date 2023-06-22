@@ -230,7 +230,7 @@ impl Flags {
         Self {
             items: Self::get_items(&cli_args.file, &cli_args.query, &mut callback)
                 .expect("Error while parsing items"),
-            layout: Self::get_layout(&cli_args.theme).unwrap(),
+            layout: Self::get_layout(&cli_args.config).unwrap(),
             callback,
             cli_args,
         }

@@ -28,7 +28,7 @@ pub struct CliArgs {
 
     /// Read a theme from a file
     #[arg(short, long, value_name = "FILE", value_hint = ValueHint::FilePath)]
-    pub theme: Option<PathBuf>,
+    pub config: Option<PathBuf>,
 
     /// How to treat case-sensitivity
     #[arg(long, value_enum, default_value_t = CaseSensitivity::Smart)]
